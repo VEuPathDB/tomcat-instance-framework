@@ -1,0 +1,499 @@
+#!/bin/bash
+
+#///////////////////////////////////////////////////////////////#
+#                                                               #
+#      Management script for Tomcat instances.                  #
+#      mheiges@uga.edu  2007                                    #
+#                                                               #
+#    $Id: instance_manager 3641 2011-10-18 18:56:09Z bdp $
+#    $URL: https://mango.ctegd.uga.edu/svn/ApiCommonSystem/trunk/Tomcat/bin/instance_manager $
+#///////////////////////////////////////////////////////////////#
+
+# clear invoker's env. Only use what is specified below or by
+# source-ing instance.env
+unset $(/bin/env | egrep '^(\w+)=(.*)$' | /bin/cut -d= -f1);
+export PATH=/bin:/usr/bin:/usr/local/bin
+
+INSTANCE=$2
+TOMCAT_INSTANCES_DIR=/usr/local/tomcat_instances
+
+pushd $TOMCAT_INSTANCES_DIR &> /dev/null
+
+core_usage() {
+    this=`basename $0`
+    instances=`find -type d -maxdepth 1 -not -name Instance_Template -not -name '.*' -not -name 'shared' -printf '%f '`
+    echo
+    echo "Manage Tomcat instances and webapps."
+    echo
+    echo "Usage: sudo $this <start|stop|restart> <instance> [force]"
+    echo "       $this manage <instance> list"
+    echo "       $this manage <instance> <start|stop|reload|undeploy|redeploy> <webapp>"
+    echo "       $this manage <instance> deploy </path/to/context.xml>"
+    echo "       $this status"
+    echo
+}
+
+usage() {
+    core_usage
+    echo "Use '$this help' for expanded information."
+    echo
+    exit 1
+}
+
+expanded_usage() {
+    core_usage
+    echo "The <instance> option refers to a Tomcat server having its own configuration"
+    echo "and JVM process. Known Tomcat instances on this server are:"
+    echo $instances
+    echo
+    echo "Each instance can be stopped, started and restarted independently of the"
+    echo "others. In uncommon cases where the instance will not stop properly, you"
+    echo "can 'stop' with  the 'force' option to kill the JVM. The 'start', 'stop'"
+    echo "and 'restart' actions of the Tomcat instance affects all contained webapps."
+    echo "Therefore these actions require sudo permissions. Example:"
+    echo "  sudo $this restart ApiDB"
+    echo 
+    echo "The 'manage' verb allows you to act within a given instance. The manage actions"
+    echo "do not require sudo permissions. The 'list' action will print the webapps"
+    echo "deployed in the instance and and their running state. Example:"
+    echo "  $this manage ApiDB list"
+    echo
+    echo "A given <webapp> can be started, stopped, reloaded, undeployed or redeployed"
+    echo "from the instance being managed. Example:"
+    echo "  $this manage ApiDB reload apidb.dev"
+    echo
+    echo "A 'redeploy' action first undeploys the existing context xml file from the"
+    echo "instance and then deploys that same xml file back in. The primary use case"
+    echo "for redeploy is to clear the webapp's cache of compiled JSP."
+    echo "If you want to change the context configuration then you must first undeploy"
+    echo "the webapp and then deploy a new, edited copy of the context xml file."
+    echo
+    echo "A webapp can be added to the instance via the 'deploy' command. A webapp"
+    echo "may not be running after deployment, so monitor the Tomcat logs during"
+    echo "deployment or use the $this 'list' command to check the webapp's"
+    echo "state after deploying. Example:"
+    echo "  $this manage ApiDB deploy \$PROJECT_HOME/../etc/apidb.dev.xml"
+    echo
+    echo "The 'status' verb prints the currently running Tomcat instances along with"
+    echo "their process id, process owner, ports and instance uptime."
+    echo
+    exit 0
+}
+
+# Extract a manager username and password from a given instance's
+# conf/tomcat-users.xml. Expects at least one username with role
+# of 'manager' only (not e.g. roles='manager,admin')
+set_manager_credentials() {
+    local instance=$1
+    userxml="${TOMCAT_INSTANCES_DIR}/${instance}/conf/tomcat-users.xml"
+    test -e $userxml || { 
+       echo
+       echo "'$userxml' not found."
+       echo "Can not get tomcat login credentials."
+       echo
+       exit 1
+    }
+ 
+    cred=($(
+       perl -MXML::Simple -e \
+       "\$x=XMLin(
+            '$userxml', 
+            NormalizeSpace=>2, 
+            KeyAttr=>['roles','username'], 
+            ForceArray=>1)->{user}->{manager}; 
+            print \"\$x->{username} \$x->{password}\";"
+        ))
+        
+    TC_USER=${cred[0]}
+    TC_PASS=${cred[1]}
+
+}
+
+prep_start_or_stop() {
+
+if test `id -u` != 0; then 
+    echo 'sudo/root permissions required to start or stop.'; exit 4;
+fi
+
+[ "$INSTANCE" == "" ] && usage;
+[ ! -d "$INSTANCE" ] && echo "Instance '$INSTANCE' not found." && exit 1;
+
+global_cfg=$TOMCAT_INSTANCES_DIR/shared/conf/global.env
+if [ ! -e $global_cfg ]; then
+    echo "$global_cfg not found"; 
+    exit 1;
+fi
+source $global_cfg
+
+export ORACLE_HOME LD_LIBRARY_PATH
+
+# Instance specific configuration
+cfg=${INSTANCE}/conf/instance.env
+if [ ! -e $cfg ]; then
+    echo "$cfg not found"; 
+    exit 1;
+fi
+source $cfg
+
+# check that we have required values
+required_cfg=( HTTP_PORT AJP13_PORT SHUTDOWN_PORT )
+for opt in ${required_cfg[@]}; do
+    [ ! "${!opt}" ] && undefined="$undefined $opt"
+done
+if [ "$undefined" ]; then
+    echo
+    echo "FATAL: Undefined properties in '$cfg':"
+    echo $undefined
+    exit 1
+fi
+
+: ${JSVC_EXE:=$CATALINA_HOME/bin/jsvc}
+: ${TMP_DIR:=/var/tmp}
+: ${PID_DIR:=/var/run/var/run}
+: ${PID_FILE:=$PID_DIR/jsvc_$INSTANCE.pid}
+: ${CATALINA_BASE:=$TOMCAT_INSTANCES_DIR/$INSTANCE}
+
+: ${CATALINA_OPTS:="                 \
+    -Xms56m -Xmx500m                 \
+    -XX:MaxPermSize=512m             \
+    -Xverify:none                    \
+    -Dhttp.port=$HTTP_PORT           \
+    -Dajp13.port=$AJP13_PORT         \
+    -Dshutdown.port=$SHUTDOWN_PORT   \
+    -Dinstance.name=$INSTANCE        \
+    -DautoDeploy=$AUTO_DEPLOY        \
+    -Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager       \
+    -Djava.util.logging.config.file=$CATALINA_BASE/conf/logging.properties  \
+    -Dorg.apache.jasper.compiler.Generator.STRICT_GET_PROPERTY=false        \
+"}
+
+# untested:
+#    -Dlog4j.configuration=$CATALINA_BASE/conf/log4j.properties
+
+: ${CLASSPATH:=\
+$JAVA_HOME/lib/tools.jar:\
+$CATALINA_HOME/:\
+$CATALINA_HOME/bin/bootstrap.jar:\
+$CATALINA_HOME/bin/commons-logging-api.jar:\
+$CATALINA_HOME/bin/tomcat-juli.jar}
+
+
+}
+
+# output parent and child processes
+get_pids() {
+    pids=$(ps -u $TOMCAT_USER  --format pid,ppid,cmd  | \
+              egrep '[j]svc.exe' | \
+              egrep "\b$INSTANCE\b" | \
+              awk '{print $1 " " $2}'
+    )
+    echo $pids
+}
+
+
+start() {
+    prep_start_or_stop
+    
+    pids=$(get_pids)
+    if [[ -n "$pids" ]]; then
+        # trim off start time for parent
+        start_time=$(ps -o bsdstart= -p $pids | head -n 1)
+        echo "$INSTANCE is already started since $start_time"
+        exit
+    fi
+
+    echo starting $INSTANCE...
+    $JSVC_EXE \
+    -user $TOMCAT_USER \
+    -home $JAVA_HOME \
+    -Dcatalina.home=$CATALINA_HOME \
+    -Dcatalina.base=$CATALINA_BASE \
+    -Djava.io.tmpdir=$TMP_DIR \
+    -wait 10 \
+    -pidfile $PID_FILE \
+    -outfile $CATALINA_BASE/logs/catalina.out \
+    -errfile '&1' \
+    $CATALINA_OPTS \
+    -cp $CLASSPATH \
+    org.apache.catalina.startup.Bootstrap
+    #
+    # To get a verbose JVM
+    #-verbose \
+    # To get a debug of jsvc.
+    #-debug
+
+    exit_status=$?
+    
+    # jsvc returns 1 even when successfully starting. So we resort
+    # to other methods of checking and returning a proper status.
+    if [[ -f $PID_FILE ]]; then
+        pid=$(cat $PID_FILE)
+        ps $pid 2>&1>/dev/null
+        return $?
+    fi
+    
+    return $exit_status
+}
+
+stop() {
+    prep_start_or_stop
+
+    pids=$(get_pids)
+    if [[ -z "$pids" ]]; then
+        echo "$INSTANCE is already stopped"
+        exit
+    fi
+
+    if [[ "$@" == "force" ]]; then
+        echo killing PIDs $pids...
+        kill -9 $pids
+        exit
+    fi
+    
+    echo -n stopping $INSTANCE...
+    
+    $JSVC_EXE \
+    -stop \
+    -pidfile $PID_FILE \
+    org.apache.catalina.startup.Bootstrap
+
+    # print a dot on the same line every 5 second that instance is still running
+    while [[ -n "$(get_pids)" ]]; do
+        echo -n "."
+        sleep 5
+    done
+
+    # add newline after last dot
+    echo ""
+
+}
+
+deployFile() {
+   cd ~-0 # cd back to user's cwd so a relative path to context.xml file is sensical
+   if [[ -z $2 ]]; then
+     echo
+     echo "no context xml file given"
+     echo
+     usage
+     exit 1
+   fi
+   local HTTP_PORT=$1
+   local context_xml_file=$(readlink -f $2)
+   if [[ ! -f $context_xml_file ]]; then
+     echo
+     echo "context xml file '$2' not found"
+     echo
+     usage
+     exit 1
+   fi
+   local context=$(perl -MXML::Simple -e "print XMLin('$context_xml_file', NormalizeSpace=>2)->{path};")
+   set_manager_credentials $INSTANCE
+   curl -s "http://$TC_USER:$TC_PASS@127.0.0.1:$HTTP_PORT/manager/deploy?config=file:$context_xml_file&war&path=$context"
+   cd - >&-
+}
+
+# pass in context xml to create and deploy from temporary context.xml file
+deployVirtual() {
+   local HTTP_PORT=$1
+   local context_xml_data="$2"
+   local tmp_ctx_file=$(mktemp -tu instance_manager.XXXXXXXXXX) || { 
+       echo "could not create temp context file '$tmp_ctx_file'"; exit 1;
+   }
+   echo "$context_xml_data" > $tmp_ctx_file 
+   local context=$(perl -MXML::Simple -e "print XMLin('$tmp_ctx_file', NormalizeSpace=>2)->{path};")
+   set_manager_credentials $INSTANCE
+   curl -s "http://$TC_USER:$TC_PASS@127.0.0.1:$HTTP_PORT/manager/deploy?config=file:$tmp_ctx_file&war&path=$context"
+   rm -f $tmp_ctx_file || { echo "could not delete temp file '$tmp_ctx_file'. Please manually remove it."; }
+}
+
+undeploy() {
+    echo -n "Whoa, Nelly, do you really want me to remove $webapp from $instance?[y/n] "
+    read ans
+    [ "$ans" != "y" ] && exit 1
+    echo
+    [ "$webapp" == "ROOT" ] && unset webapp
+    curl -s "http://$TC_USER:$TC_PASS@127.0.0.1:$HTTP_PORT/manager/undeploy?path=/$webapp"
+}
+
+tstatus() {
+    local IFS="
+"
+    running_instances="$(ps -fd  | egrep '[j]svc.exe')"
+    
+    format="%-10.10s %6.6s %10.10s %6.6s %6.6s %6.6s %10s\n"
+    
+    printf $format INSTANCE PID USER HTTP AJP13 SHUTDOWN UPTIME
+    for inst in ${running_instances[@]}; do
+        pid=`echo $inst | awk '{print $2}'`
+        instance=`expr "$inst" : '.*Dinstance.name=\([^ ]*\)'`
+        http=`expr "$inst" : '.*Dhttp.port=\([^ ]*\)'`
+        ajp13=`expr "$inst" : '.*Dajp13.port=\([^ ]*\)'`
+        sdown=`expr "$inst" : '.*Dshutdown.port=\([^ ]*\)'`
+        user=`expr "$inst" : '.*-user \([^ ]*\) '`
+        uptime=`ps -o etime $pid|grep -v ELAPSED | sed 's/[\s\n\r]*//g' | sed "s/\(.*\)-\(.*\):\(.*\):\(.*\)/\1d \2h/; s/\(.*\):\(.*\):\(.*\)/\1h \2m/; s/\(.*\):\(.*\)/\1m \2s/"`
+        printf $format $instance $pid $user $http $ajp13 $sdown $uptime
+
+        # verify ownership of non webapp files
+        cfg=${instance}/conf/instance.env
+        if [ -e $cfg ]; then
+            source $cfg
+            notowner=${notowner}`find $instance -not -user $TOMCAT_USER -not -path "$instance/webapps/*"`"\n"
+        fi        
+
+    done
+    
+    exit
+}
+
+wstatus() {
+   local webapp=$1
+   set_manager_credentials $INSTANCE
+   curl -s http://$TC_USER:$TC_PASS@127.0.0.1:$HTTP_PORT/manager/list | egrep "^/$webapp:" | awk -F: "{print \$2}"
+}
+
+start_app() {
+    local webapp=$1
+    if [ -z $webapp ]; then
+      echo
+      echo "no webapp given"
+      echo
+      usage
+    fi
+    
+    if [ "`wstatus $webapp`" == "running" ]; then
+      echo
+      echo "$webapp is already running."
+      echo "I'm going to attempt to reload it instead."
+      echo
+      manage $INSTANCE reload $webapp
+    else
+      set_manager_credentials $INSTANCE
+      curl -s "http://$TC_USER:$TC_PASS@127.0.0.1:$HTTP_PORT/manager/start?path=/$webapp"
+    fi
+}
+
+manage() {
+    [ "$1" == "" ] && usage;
+    [ ! -d "$1" ] && echo "Instance '$1' not found." && exit 1;
+    local instance=$1
+    local cmd=$2
+    local context=$3
+    local webapp=$(echo "$3" | sed -e "s/^\///")
+
+    local cfg=${instance}/conf/instance.env
+    if [ ! -e $cfg ]; then
+        echo "$cfg not found"; 
+        exit 1;
+    fi
+    source $cfg
+    
+    set_manager_credentials $instance
+
+    case "$cmd" in
+        list)
+            curl -s "http://$TC_USER:$TC_PASS@127.0.0.1:$HTTP_PORT/manager/list"
+            ;;
+        stop)
+            if [ -z $webapp ]; then
+              echo
+              echo "no webapp given"
+              echo
+              usage
+            fi           
+            curl -s "http://$TC_USER:$TC_PASS@127.0.0.1:$HTTP_PORT/manager/stop?path=/$webapp"
+            ;;
+        start)
+            if [ -z $webapp ]; then
+              echo
+              echo "no webapp given"
+              echo
+              usage
+            fi           
+            start_app $webapp
+            ;;
+        reload)
+            if [ -z $webapp ]; then
+              echo
+              echo "no webapp given"
+              echo
+              usage
+            fi           
+            if [ "`wstatus $webapp`" == "stopped" ]; then
+                echo
+                echo "$webapp is stopped. I will attempt to start it. Wish me luck."
+                echo
+              start_app $webapp
+            else
+              curl -s "http://$TC_USER:$TC_PASS@127.0.0.1:$HTTP_PORT/manager/reload?path=/$webapp"
+            fi
+            ;;
+        undeploy)
+            if [ -z $webapp ]; then
+              echo
+              echo "no webapp given"
+              echo
+              usage
+            fi           
+            undeploy
+            ;;
+        redeploy)
+            ctx_xml_file="$TOMCAT_INSTANCES_DIR/$instance/conf/Catalina/localhost/$webapp.xml"
+            contextXmlData="$(cat $ctx_xml_file)" || {
+                echo "'$ctx_xml_file' not found or is not readable. Is $webapp deployed in $instance? Quitting."; exit 1;
+            }
+            undeploy
+            deployVirtual $HTTP_PORT "$contextXmlData"
+            ;;
+        deploy)
+            deployFile $HTTP_PORT $context
+            ;;
+           *)
+            this=`basename $0`
+            cat <<EOF
+Usage: $this manage $instance COMMAND
+Command Options:
+        list
+        stop <webapp>
+        start <webapp>
+        reload <webapp>
+        deploy </path/to/context.xml>
+        undeploy <webapp>
+        redeploy <webapp>
+EOF
+            ;;
+    esac
+}
+
+case "$1" in
+  start)
+    start
+    exit $?
+    ;;
+
+  stop)
+    stop $3
+    exit $?
+    ;;
+
+  restart)
+    stop $3
+    start
+    exit $?
+    ;;
+
+  stat*)
+    tstatus
+    ;;
+  man*)
+    shift
+    manage "$@"
+    exit $?
+    ;;
+  help)
+    expanded_usage
+    exit $?
+    ;;
+  *)
+    usage
+    ;;
+esac

@@ -1,0 +1,10 @@
+
+<Context path="/"
+       docBase="/usr/local/tomcat_instances/shared/webapps/ROOT"
+         privileged="true" antiResourceLocking="false" antiJARLocking="false">
+
+  <!-- Link to the user database we will get roles from -->
+  <ResourceLink name="users" global="UserDatabase"
+                type="org.apache.catalina.UserDatabase"/>
+
+</Context>
