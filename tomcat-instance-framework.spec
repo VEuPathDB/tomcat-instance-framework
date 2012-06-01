@@ -6,7 +6,8 @@
 
 Summary: EuPathDB-BRC Instance Framework for Apache Tomcat
 Name: tomcat-instance-framework
-Version: %{Version}
+# on CLI, use  --define 'pkg_version 1.2.3'
+Version: %{pkg_version}
 Release: 1
 License: GPL
 Group: Networking/Daemons
@@ -28,6 +29,7 @@ The tomcat-instance-framework package provides the framework to create
 Tomcat instances for the EuPathDB BRC project.
 
 %prep
+
 %setup -q
 
 %build
