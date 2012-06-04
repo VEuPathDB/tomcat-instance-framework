@@ -59,9 +59,14 @@ exit 0
 
 %files
 %defattr(-, tomcat, tomcat)
-/usr/local/%{instance_dir}
 %attr(755, root, root) /usr/bin/instance_manager
 %attr(754, root, root) /etc/init.d/tomcat
+/usr/local/%{instance_dir}/Instance_Template
+/usr/local/%{instance_dir}/Makefile
+/usr/local/%{instance_dir}/shared/webapps
+
+%config
+/usr/local/%{instance_dir}/shared/conf
 
 %doc
 /usr/share/doc/%{pkg_name}-%{version}/Changelog
