@@ -65,14 +65,24 @@ exit 0
 /usr/local/%{instance_dir}/Makefile
 /usr/local/%{instance_dir}/shared/webapps
 
-%config
-/usr/local/%{instance_dir}/shared/conf
+%dir /usr/local/%{instance_dir}
+%dir /usr/local/%{instance_dir}/shared
+%dir /usr/local/%{instance_dir}/shared/conf
+
+%config /usr/local/%{instance_dir}/shared/conf/cacerts
+%config /usr/local/%{instance_dir}/shared/conf/global.env
+%config /usr/local/%{instance_dir}/shared/conf/tomcat-users.xml
 
 %doc
 /usr/share/doc/%{pkg_name}-%{version}/Changelog
 
 %changelog
+* Wed Jun 6 2012 Mark Heiges <mheiges@uga.edu>
+- fix %config settings
+
 * Tue May 22 2012 Mark Heiges <mheiges@uga.edu> 1.2-1
+- rework spec to aid parameterized version builds
+
 * Wed Oct 5 2011 Mark Heiges <mheiges@uga.edu> 1.1-3
 - fix instance_manager path in init script, #5958
 - added JDBC install option in Makefile, #5787
