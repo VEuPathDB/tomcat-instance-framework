@@ -73,8 +73,7 @@ exit 0
 %config /usr/local/%{instance_dir}/shared/conf/global.env
 %config /usr/local/%{instance_dir}/shared/conf/tomcat-users.xml
 
-%doc
-/usr/share/doc/%{pkg_name}-%{version}/Changelog
+%doc /usr/share/doc/%{pkg_name}/Changelog
 
 %changelog
 * Wed Jun 6 2012 Mark Heiges <mheiges@uga.edu>

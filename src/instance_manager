@@ -332,16 +332,16 @@ tstatus() {
     
     format="%-10.10s %6.6s %10.10s %6.6s %6.6s %6.6s %10s\n"
     
-    printf $format INSTANCE PID USER HTTP AJP13 SHUTDOWN UPTIME
+    printf $format INSTANCE PID USER HTTP AJP13 JMX UPTIME
     for inst in ${running_instances[@]}; do
         pid=`echo $inst | awk '{print $2}'`
         instance=`expr "$inst" : '.*Dinstance.name=\([^ ]*\)'`
         http=`expr "$inst" : '.*Dhttp.port=\([^ ]*\)'`
         ajp13=`expr "$inst" : '.*Dajp13.port=\([^ ]*\)'`
-        sdown=`expr "$inst" : '.*Dshutdown.port=\([^ ]*\)'`
+        jmx=`expr "$inst" : '.*Dcom.sun.management.jmxremote.port=\([^ ]*\)'`
         user=`expr "$inst" : '.*-user \([^ ]*\) '`
         uptime=`ps -o etime $pid|grep -v ELAPSED | sed 's/[\s\n\r]*//g' | sed "s/\(.*\)-\(.*\):\(.*\):\(.*\)/\1d \2h/; s/\(.*\):\(.*\):\(.*\)/\1h \2m/; s/\(.*\):\(.*\)/\1m \2s/"`
-        printf $format $instance $pid $user $http $ajp13 $sdown $uptime
+        printf $format $instance $pid $user $http $ajp13 $jmx $uptime
 
         # verify ownership of non webapp files
         cfg=${instance}/conf/instance.env
