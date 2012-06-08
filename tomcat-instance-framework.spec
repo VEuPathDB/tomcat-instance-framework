@@ -1,4 +1,4 @@
-%define pkg_name tomcat-instance-framework-%{version}
+%define pkg_name tomcat-instance-framework
 %define instance_dir tomcat_instances
 %define required_tomcat_version 5.5.30
 %define tomcat_uid 300
@@ -22,7 +22,7 @@ Requires(pre): %{_sbindir}/groupadd
 
 Source0: tomcat-instance-framework-%{version}.tar.gz
 
-BuildRoot: %{_tmppath}/%{pkg_name}
+BuildRoot: %{_tmppath}/%{pkg_name}-%{version}
 
 %description
 The tomcat-instance-framework package provides the framework to create 
@@ -40,11 +40,11 @@ rm -rf $RPM_BUILD_ROOT
 mkdir -p $RPM_BUILD_ROOT/usr/bin
 mkdir -p $RPM_BUILD_ROOT/usr/local
 mkdir -p $RPM_BUILD_ROOT/etc/init.d
-mkdir -p $RPM_BUILD_ROOT/usr/share/doc/%{pkg_name}-%{version}
+mkdir -p $RPM_BUILD_ROOT/usr/share/doc/%{pkg_name}
 cp -a %{instance_dir} $RPM_BUILD_ROOT/usr/local/
 cp instance_manager $RPM_BUILD_ROOT/usr/bin/instance_manager
 cp tomcat $RPM_BUILD_ROOT/etc/init.d/tomcat
-cp Changelog $RPM_BUILD_ROOT/usr/share/doc/%{pkg_name}-%{version}
+cp Changelog $RPM_BUILD_ROOT/usr/share/doc/%{pkg_name}
 
 %clean
 rm -rf $RPM_BUILD_ROOT
