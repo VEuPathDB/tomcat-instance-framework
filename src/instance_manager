@@ -21,7 +21,7 @@ pushd $TOMCAT_INSTANCES_DIR &> /dev/null
 
 core_usage() {
     this=`basename $0`
-    instances=`find -type d -maxdepth 1 -not -name Instance_Template -not -name '.*' -not -name 'shared' -printf '%f '`
+    instances=`find  -maxdepth 1 -type d -not -name Instance_Template -not -name '.*' -not -name 'shared' -printf '%f '`
     echo
     echo "Manage Tomcat instances and webapps."
     echo
@@ -135,8 +135,14 @@ if [ ! -e $cfg ]; then
 fi
 source $cfg
 
+# Backward compatibility:
+# convert any old SHUTDOWN_PORT configurations to JMX_PORT.
+# We launch via jsvc which does not use a shutdown port so 
+# this is OK.
+JMX_PORT=${JMX_PORT:-$SHUTDOWN_PORT}
+
 # check that we have required values
-required_cfg=( HTTP_PORT AJP13_PORT SHUTDOWN_PORT )
+required_cfg=( HTTP_PORT AJP13_PORT JMX_PORT )
 for opt in ${required_cfg[@]}; do
     [ ! "${!opt}" ] && undefined="$undefined $opt"
 done
@@ -159,7 +165,11 @@ fi
     -Xverify:none                    \
     -Dhttp.port=$HTTP_PORT           \
     -Dajp13.port=$AJP13_PORT         \
-    -Dshutdown.port=$SHUTDOWN_PORT   \
+    -Dshutdown.port=-1               \
+    -Dcom.sun.management.jmxremote                    \
+    -Dcom.sun.management.jmxremote.port=$JMX_PORT     \
+    -Dcom.sun.management.jmxremote.ssl=false          \
+    -Dcom.sun.management.jmxremote.authenticate=false \
     -Dinstance.name=$INSTANCE        \
     -DautoDeploy=$AUTO_DEPLOY        \
     -Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager       \
