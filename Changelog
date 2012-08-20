@@ -1,3 +1,5 @@
+2.0
+- Update to Tomcat 6.0.35
 
 1.2
 - remove EuPathDB/WDK-specific .apidb_wdk_key file

@@ -1,12 +1,14 @@
 %define pkg_name tomcat-instance-framework
 %define instance_dir tomcat_instances
-%define required_tomcat_version 5.5.30
+%define required_tomcat_version 6.0.35
+%define required_java_version 1.7.0_02
+%define required_oracle_version 11.2.0.3
 %define tomcat_uid 300
 %define packager Mark Heiges <mheiges@uga.edu>
 
 Summary: EuPathDB-BRC Instance Framework for Apache Tomcat
 Name: tomcat-instance-framework
-# on CLI, use  --define 'pkg_version 1.2.3'
+# set version on CLI, e.g. rpmbuild --define 'pkg_version 1.2.3'
 Version: %{pkg_version}
 Release: 1
 License: GPL
@@ -14,8 +16,8 @@ Group: Networking/Daemons
 URL: https://www.cbil.upenn.edu/apiwiki/index.php/UGATomcatConfiguration
 Packager: %{packager}
 
-#Requires: java-1.5.0-bea
-#Requires: tomcat-%{required_tomcat_version}
+Requires: jdk >= %{required_java_version}
+Requires: tomcat-%{required_tomcat_version}
 Requires(pre): %{_sbindir}/useradd
 Requires(pre): %{_sbindir}/groupadd
 
@@ -33,7 +35,10 @@ Tomcat instances for the EuPathDB BRC project.
 %setup -q
 
 %build
-
+%define tc_shared_conf tomcat_instances/shared/conf/global.env
+sed -i 's;^CATALINA_HOME=.*;CATALINA_HOME=/usr/local/apache-tomcat-%{required_tomcat_version};' %{tc_shared_conf}
+sed -i 's;^JAVA_HOME=.*;JAVA_HOME=/usr/java/jdk%{required_java_version};' %{tc_shared_conf}
+sed -i 's;^ORACLE_HOME=.*;ORACLE_HOME=/u01/app/oracle/product/%{required_oracle_version}/db_1;' %{tc_shared_conf}
 
 %install
 rm -rf $RPM_BUILD_ROOT
@@ -76,6 +81,10 @@ exit 0
 %doc /usr/share/doc/%{pkg_name}/Changelog
 
 %changelog
+%changelog
+* Tue Aug 14 2012 Mark Heiges <mheiges@uga.edu> 1.0-1
+- update to tomcat 6.0.35
+
 * Wed Jun 6 2012 Mark Heiges <mheiges@uga.edu>
 - fix %config settings
 
