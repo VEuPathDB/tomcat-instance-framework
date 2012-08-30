@@ -1,7 +1,7 @@
 # Make a Tomcat project instance for EuPathDB
 # usage
 #
-#  make intall                        \
+#  make install                        \
 #    INSTANCE=PootieDB                \
 #    HTTP_PORT=19280                  \
 #    AJP13_PORT=19209                 \
