@@ -22,7 +22,7 @@ TS=$(shell date +%y%m%d%H%M%S)
 
 all:
 	@echo Usage:
-	@echo 'make intall'
+	@echo 'make install'
 	@echo 'make update'
 	@echo 'with defined environment varialbles:'
 	@echo '  INSTANCE=PootieDB                \
