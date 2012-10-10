@@ -17,6 +17,9 @@
 #    TOMCAT_USER=tomcat_Z             \
 #    INSTALL_ORACLE_JDBC=1
 
+# Other special purppose variables
+#    DEFER_USER=1  - do not do check and chown for user. Useful for RPM builds on naive servers, 
+#                    assuming the RPM install process does the chown (e.g. using %attr() ).
 
 TS=$(shell date +%y%m%d%H%M%S)
 
@@ -41,7 +44,7 @@ ifneq "$(wildcard $(INSTANCE) )" ""
 	@echo $(INSTANCE) already exits
 	@exit 1
 endif
-	@if [ -z `id -u $(TOMCAT_USER)  2> /dev/null` ]; then \
+	@if [[ "$(DEFER_USER)" -ne 1 && -z `id -u $(TOMCAT_USER)  2> /dev/null` ]]; then \
         echo user $(TOMCAT_USER) does not exist; \
         exit 1; \
 	fi
@@ -84,7 +87,9 @@ configure:
 
 fix_perms:
 	chmod 0644 $(INSTANCE)/conf/instance.env
-	chown -R $(TOMCAT_USER):tomcat $(INSTANCE)
+	@if [[ "$(DEFER_USER)" -ne 1 ]]; then \
+	  chown -R $(TOMCAT_USER):tomcat $(INSTANCE); \
+	fi;
 
 
 # Install new configuration from Instance_Template. Original configuration
