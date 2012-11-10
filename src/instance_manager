@@ -301,7 +301,7 @@ deployFile() {
    local context=$(perl -MXML::Simple -e "print XMLin('$context_xml_file', NormalizeSpace=>2)->{path};")
    set_manager_credentials $INSTANCE
    curl -s "http://$TC_USER:$TC_PASS@127.0.0.1:$HTTP_PORT/manager/deploy?config=file:$context_xml_file&war&path=$context"
-   cd - >&-
+   cd - > /dev/null
 }
 
 # pass in context xml to create and deploy from temporary context.xml file
