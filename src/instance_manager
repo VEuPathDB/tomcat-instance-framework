@@ -160,7 +160,7 @@ fi
 : ${CATALINA_BASE:=$TOMCAT_INSTANCES_DIR/$INSTANCE}
 
 : ${CATALINA_OPTS:="                 \
-    -Xms56m -Xmx500m                 \
+    -Xms256m -Xmx1024m                 \
     -XX:MaxPermSize=512m             \
     -Xverify:none                    \
     -Dhttp.port=$HTTP_PORT           \
