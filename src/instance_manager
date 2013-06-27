@@ -111,84 +111,95 @@ set_manager_credentials() {
 
 prep_start_or_stop() {
 
-if test `id -u` != 0; then 
-    echo 'sudo/root permissions required to start or stop.'; exit 4;
-fi
+    if test `id -u` != 0; then 
+        echo 'sudo/root permissions required to start or stop.'; exit 4;
+    fi
+    
+    [ "$INSTANCE" == "" ] && usage;
+    [ ! -d "$INSTANCE" ] && echo "Instance '$INSTANCE' not found." && exit 1;
+    
+    for arg in "$@"; do
+      if [[ "$arg" == "verbose" ]]; then
+        VERBOSE=1
+      fi
+    done
+    
+    # an associative array of extra options that can be defined in 
+    # global.env or instance.env
+    declare -A CATALINA_OPTS
+    
+    global_cfg=$TOMCAT_INSTANCES_DIR/shared/conf/global.env
+    if [ ! -e $global_cfg ]; then
+        echo "$global_cfg not found"; 
+        exit 1;
+    fi
+    source $global_cfg
+    
+    export ORACLE_HOME LD_LIBRARY_PATH
+    
+    # Instance specific configuration
+    cfg=${INSTANCE}/conf/instance.env
+    if [ ! -e $cfg ]; then
+        echo "$cfg not found"; 
+        exit 1;
+    fi
+    source $cfg
+    
+    # Backward compatibility:
+    # convert any old SHUTDOWN_PORT configurations to JMX_PORT.
+    # We launch via jsvc which does not use a shutdown port so 
+    # this is OK.
+    JMX_PORT=${JMX_PORT:-$SHUTDOWN_PORT}
+    
+    # check that we have required values
+    required_cfg=( HTTP_PORT AJP13_PORT JMX_PORT )
+    for opt in ${required_cfg[@]}; do
+        [ ! "${!opt}" ] && undefined="$undefined $opt"
+    done
+    if [ "$undefined" ]; then
+        echo
+        echo "FATAL: Undefined properties in '$cfg':"
+        echo $undefined
+        exit 1
+    fi
 
-[ "$INSTANCE" == "" ] && usage;
-[ ! -d "$INSTANCE" ] && echo "Instance '$INSTANCE' not found." && exit 1;
-
-global_cfg=$TOMCAT_INSTANCES_DIR/shared/conf/global.env
-if [ ! -e $global_cfg ]; then
-    echo "$global_cfg not found"; 
-    exit 1;
-fi
-source $global_cfg
-
-export ORACLE_HOME LD_LIBRARY_PATH
-
-# Instance specific configuration
-cfg=${INSTANCE}/conf/instance.env
-if [ ! -e $cfg ]; then
-    echo "$cfg not found"; 
-    exit 1;
-fi
-source $cfg
-
-# Backward compatibility:
-# convert any old SHUTDOWN_PORT configurations to JMX_PORT.
-# We launch via jsvc which does not use a shutdown port so 
-# this is OK.
-JMX_PORT=${JMX_PORT:-$SHUTDOWN_PORT}
-
-# check that we have required values
-required_cfg=( HTTP_PORT AJP13_PORT JMX_PORT )
-for opt in ${required_cfg[@]}; do
-    [ ! "${!opt}" ] && undefined="$undefined $opt"
-done
-if [ "$undefined" ]; then
-    echo
-    echo "FATAL: Undefined properties in '$cfg':"
-    echo $undefined
-    exit 1
-fi
-
-: ${JSVC_EXE:=$CATALINA_HOME/bin/jsvc}
-: ${TMP_DIR:=/var/tmp}
-: ${PID_DIR:=/var/run/var/run}
-: ${PID_FILE:=$PID_DIR/jsvc_$INSTANCE.pid}
-: ${CATALINA_BASE:=$TOMCAT_INSTANCES_DIR/$INSTANCE}
-
-: ${CATALINA_OPTS:="                 \
-    -Xms256m -Xmx1024m                 \
-    -XX:MaxPermSize=512m             \
-    -Xverify:none                    \
-    -Dhttp.port=$HTTP_PORT           \
-    -Dajp13.port=$AJP13_PORT         \
-    -Dshutdown.port=-1               \
-    -Dcom.sun.management.jmxremote                    \
-    -Dcom.sun.management.jmxremote.port=$JMX_PORT     \
-    -Dcom.sun.management.jmxremote.ssl=false          \
-    -Dcom.sun.management.jmxremote.authenticate=false \
-    -Dinstance.name=$INSTANCE        \
-    -DautoDeploy=$AUTO_DEPLOY        \
-    -Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager       \
-    -Djava.util.logging.config.file=$CATALINA_BASE/conf/logging.properties  \
-    -Dorg.apache.jasper.compiler.Generator.STRICT_GET_PROPERTY=false        \
-"}
-
-# untested:
-#    -Dlog4j.configuration=$CATALINA_BASE/conf/log4j.properties
-
-: ${CLASSPATH:=\
-$JAVA_HOME/lib/tools.jar:\
-$CATALINA_HOME/:\
-$CATALINA_HOME/bin/bootstrap.jar:\
-$CATALINA_HOME/bin/commons-logging-api.jar:\
-$CATALINA_HOME/bin/tomcat-juli.jar}
+    : ${JSVC_EXE:=$CATALINA_HOME/bin/jsvc}
+    : ${TMP_DIR:=/var/tmp}
+    : ${PID_DIR:=/var/run/var/run}
+    : ${PID_FILE:=$PID_DIR/jsvc_$INSTANCE.pid}
+    : ${CATALINA_BASE:=$TOMCAT_INSTANCES_DIR/$INSTANCE}
 
 
-}
+    #  properties required for proper function tomcat_instance framework and its support scripts.
+    : ${FRAMEWORK_PROPERTIES:="  \
+        -Dhttp.port=$HTTP_PORT           \
+        -Dajp13.port=$AJP13_PORT         \
+        -Dshutdown.port=-1               \
+        -Dinstance.name=$INSTANCE        \
+    "}
+    
+    
+    # 'eval echo' expands any embedded variables
+    for val in "${CATALINA_OPTS[*]}"; do
+      CATALINA_OPTS_E="${CATALINA_OPTS_E} $(eval echo $val)"
+    done
+
+    DEFAULT_CLASSPATHS=(
+      "$JAVA_HOME/lib/tools.jar"
+      "$CATALINA_HOME"
+      "$CATALINA_HOME/bin/bootstrap.jar"
+      "$CATALINA_HOME/bin/commons-logging-api.jar"
+      "$CATALINA_HOME/bin/tomcat-juli.jar"
+    )
+
+    if [[ -z "$CLASSPATH" ]]; then
+      for p in ${DEFAULT_CLASSPATHS[*]}; do
+        CLASSPATH="$CLASSPATH:$p"
+      done
+    fi
+
+} # prep_start_or_stop()
+
 
 # output parent and child processes
 get_pids() {
@@ -202,7 +213,7 @@ get_pids() {
 
 
 start() {
-    prep_start_or_stop
+    prep_start_or_stop "$@"
     
     pids=$(get_pids)
     if [[ -n "$pids" ]]; then
@@ -223,9 +234,10 @@ start() {
            rm -f $PID_FILE
         fi
     fi
-    
+
     echo starting $INSTANCE...
-    $JSVC_EXE \
+
+    STARTUP_EXEC="$JSVC_EXE \
     -user $TOMCAT_USER \
     -home $JAVA_HOME \
     -Dcatalina.home=$CATALINA_HOME \
@@ -235,9 +247,18 @@ start() {
     -pidfile $PID_FILE \
     -outfile $CATALINA_BASE/logs/catalina.out \
     -errfile '&1' \
-    $CATALINA_OPTS \
+    $FRAMEWORK_PROPERTIES \
+    $CATALINA_OPTS_E \
+    -DautoDeploy=$AUTO_DEPLOY        \
     -cp $CLASSPATH \
-    org.apache.catalina.startup.Bootstrap
+    org.apache.catalina.startup.Bootstrap"
+
+    [[ $VERBOSE ]] && echo -e "CATALINA_OPTS\n${CATALINA_OPTS_E}\n"
+    [[ $VERBOSE ]] && echo -e "CLASSPATH\n${CLASSPATH}\n"
+    [[ $VERBOSE ]] && echo -e "complete startup command\n${STARTUP_EXEC}\n"
+    
+    eval $STARTUP_EXEC
+        
     #
     # To get a verbose JVM
     #-verbose \
@@ -268,11 +289,13 @@ stop() {
         exit
     fi
 
-    if [[ "$@" == "force" ]]; then
-        echo killing PIDs $pids...
-        kill -9 $pids
-        exit
-    fi
+    for arg in "$@"; do
+      if [[ "$arg" == "force" ]]; then
+          echo killing PIDs $pids...
+          kill -9 $pids
+          exit
+      fi
+    done
     
     echo -n stopping $INSTANCE...
     
@@ -490,18 +513,18 @@ EOF
 
 case "$1" in
   start)
-    start
+    start "${@:3}"
     exit $?
     ;;
 
   stop)
-    stop $3
+    stop "${@:3}"
     exit $?
     ;;
 
   restart)
-    stop $3
-    start
+    stop "${@:3}"
+    start "${@:3}"
     exit $?
     ;;
 
