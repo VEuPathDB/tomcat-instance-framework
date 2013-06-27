@@ -50,6 +50,7 @@ cp -a %{instance_dir} $RPM_BUILD_ROOT/usr/local/
 cp instance_manager $RPM_BUILD_ROOT/usr/bin/instance_manager
 cp tomcat $RPM_BUILD_ROOT/etc/init.d/tomcat
 cp Changelog $RPM_BUILD_ROOT/usr/share/doc/%{pkg_name}
+cp ReadMe.md $RPM_BUILD_ROOT/usr/share/doc/%{pkg_name}
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -71,6 +72,7 @@ exit 0
 /usr/local/%{instance_dir}/shared/webapps
 
 %dir /usr/local/%{instance_dir}
+%dir /usr/local/%{instance_dir}/docs
 %dir /usr/local/%{instance_dir}/shared
 %dir /usr/local/%{instance_dir}/shared/conf
 
@@ -79,8 +81,8 @@ exit 0
 %config /usr/local/%{instance_dir}/shared/conf/tomcat-users.xml
 
 %doc /usr/share/doc/%{pkg_name}/Changelog
+%doc /usr/share/doc/%{pkg_name}/ReadMe.md
 
-%changelog
 %changelog
 * Tue Aug 14 2012 Mark Heiges <mheiges@uga.edu> 1.0-1
 - update to tomcat 6.0.35

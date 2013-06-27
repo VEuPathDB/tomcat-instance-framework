@@ -1,3 +1,8 @@
+2.1
+- CATALINA_OPTS is now an associative array to allow finer grained
+configuration. 
+- The default startup options have been minimized.s
+
 2.0
 - Update to Tomcat 6.0.35
 
