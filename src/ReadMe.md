@@ -1,1 +1,0 @@
-EuPathDB tomcat-instance-framework
