@@ -1,8 +1,8 @@
 # Make a Tomcat project instance for EuPathDB
 # usage
 #
-#  make install                        \
-#    INSTANCE=PootieDB                \
+#  make install                       \
+#    INSTANCE=FooDB                   \
 #    HTTP_PORT=19280                  \
 #    AJP13_PORT=19209                 \
 #    JMX_PORT=19205                   \
@@ -10,7 +10,7 @@
 #    INSTALL_ORACLE_JDBC=1
 #
 #  make update                        \
-#    INSTANCE=PootieDB                \
+#    INSTANCE=FooDB                   \
 #    HTTP_PORT=19280                  \
 #    AJP13_PORT=19209                 \
 #    JMX_PORT=19205                   \
@@ -28,7 +28,7 @@ all:
 	@echo 'make install'
 	@echo 'make update'
 	@echo 'with defined environment varialbles:'
-	@echo '  INSTANCE=PootieDB                \
+	@echo '  INSTANCE=FooDB             \
   HTTP_PORT=19280                  \
   AJP13_PORT=19209                 \
   JMX_PORT=19205                   \
