@@ -72,7 +72,6 @@ exit 0
 /usr/local/%{instance_dir}/shared/webapps
 
 %dir /usr/local/%{instance_dir}
-%dir /usr/local/%{instance_dir}/docs
 %dir /usr/local/%{instance_dir}/shared
 %dir /usr/local/%{instance_dir}/shared/conf
 
