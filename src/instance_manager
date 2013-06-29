@@ -378,7 +378,7 @@ tstatus() {
         jmx=`expr "$inst" : '.*Dcom.sun.management.jmxremote.port=\([^ ]*\)'`
         user=`expr "$inst" : '.*-user \([^ ]*\) '`
         uptime=`ps -o etime $pid|grep -v ELAPSED | sed 's/[\s\n\r]*//g' | sed "s/\(.*\)-\(.*\):\(.*\):\(.*\)/\1d \2h/; s/\(.*\):\(.*\):\(.*\)/\1h \2m/; s/\(.*\):\(.*\)/\1m \2s/"`
-        printf $format $instance $pid $user $http $ajp13 $jmx $uptime
+        printf "$format" "$instance" "$pid" "$user" "$http" "$ajp13" "$jmx" "$uptime"
 
         # verify ownership of non webapp files
         cfg=${instance}/conf/instance.env
