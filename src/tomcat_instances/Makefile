@@ -7,7 +7,8 @@
 #    AJP13_PORT=19209                 \
 #    JMX_PORT=19205                   \
 #    TOMCAT_USER=tomcat_Z             \
-#    INSTALL_ORACLE_JDBC=1
+#    ORCL_JDBC_PATH=$ORACLE_HOME/jdbc/lib/ojdbc6.jar \
+#    PG_JDBC_PATH=$PG_HOME/lib/java/postgresql92-jdbc.jar
 #
 #  make update                        \
 #    INSTANCE=FooDB                   \
@@ -15,7 +16,11 @@
 #    AJP13_PORT=19209                 \
 #    JMX_PORT=19205                   \
 #    TOMCAT_USER=tomcat_Z             \
-#    INSTALL_ORACLE_JDBC=1
+#    ORCL_JDBC_PATH=$ORACLE_HOME/jdbc/lib/ojdbc6.jar \
+#    PG_JDBC_PATH=$PG_HOME/lib/java/postgresql92-jdbc.jar
+#
+# Optionally,
+#    ORCL_JDBC_PATH and PG_JDBC_PATH are optional
 
 # Other special purppose variables
 #    DEFER_USER=1  - do not do check and chown for user. Useful for RPM builds on naive servers, 
@@ -27,17 +32,21 @@ all:
 	@echo Usage:
 	@echo 'make install'
 	@echo 'make update'
-	@echo 'with defined environment varialbles:'
-	@echo '  INSTANCE=FooDB             \
-  HTTP_PORT=19280                  \
-  AJP13_PORT=19209                 \
-  JMX_PORT=19205                   \
-  TOMCAT_USER=tomcat_Z             \
-  INSTALL_ORACLE_JDBC=1'
+	@echo
+	@echo 'Required variables:'
+	@echo '  INSTANCE=FooDB                              \
+  HTTP_PORT=19280                             \
+  AJP13_PORT=19209                            \
+  JMX_PORT=19205                              \
+  TOMCAT_USER=tomcat_Z                        \
+  TEMPLATE=7.0.23'
+	@echo
+	@echo 'Optional variables:'
+	@echo '  ORCL_JDBC_PATH=$ORACLE_HOME/jdbc/lib/ojdbc6.jar'
+	@echo '  PG_JDBC_PATH=$PG_HOME/lib/java/postgresql92-jdbc.jar'
 
-
-install : can_install copy_template install_oracle configure fix_perms
-update: can_update install_oracle replace_configuration configure fix_perms
+install : can_install copy_temp_template install_oracle_driver install_pg_driver configure fix_perms
+update: can_update install_oracle_driver install_pg_driver replace_configuration configure fix_perms restart_notice
 
 can_install:
 ifneq "$(wildcard $(INSTANCE) )" ""
@@ -55,34 +64,38 @@ ifeq "$(wildcard $(INSTANCE) )" ""
 	@exit 1
 endif
 
-install_oracle:
-	@if [[ "$(INSTALL_ORACLE_JDBC)" -eq "1" ]]; then \
-	  if [[ -z "$(ORACLE_HOME)" ]]; then \
-        echo ORACLE_HOME is not set, can not install JDBC driver; \
+install_oracle_driver:
+	@if [[ -n "$(ORCL_JDBC_PATH)" ]]; then \
+	  if [[ ! -f "$(ORCL_JDBC_PATH)" ]]; then \
+        echo $(ORCL_JDBC_PATH) not found, can not install JDBC driver; \
         exit 1; \
       fi; \
-	  if [[ ! -f "$(ORACLE_HOME)/jdbc/lib/ojdbc5.jar" ]]; then \
-        echo ojdbc5.jar is not found at $(ORACLE_HOME)/jdbc/lib/ojdbc5.jar, can not install JDBC driver; \
-        exit 1; \
-      fi; \
+    echo installing $(ORCL_JDBC_PATH); \
+    cp $(ORCL_JDBC_PATH) $(INSTANCE)/shared/lib/; \
 	 fi;
 
-	@if [[ "$(INSTALL_ORACLE_JDBC)" -eq "1" ]]; then \
-        echo installing $(ORACLE_HOME)/jdbc/lib/ojdbc5.jar; \
-        cp $(ORACLE_HOME)/jdbc/lib/ojdbc5.jar $(INSTANCE)/shared/lib/; \
-     fi
+install_pg_driver:
+	@if [[ -n "$(PG_JDBC_PATH)" ]]; then \
+	  if [[ ! -f "$(PG_JDBC_PATH)" ]]; then \
+        echo $(PG_JDBC_PATH) not found, can not install JDBC driver; \
+        exit 1; \
+      fi; \
+    echo installing $(PG_JDBC_PATH); \
+    cp $(PG_JDBC_PATH) $(INSTANCE)/shared/lib/; \
+	 fi;
 
-copy_template:
-	cp -a Instance_Template $(INSTANCE)
-
+copy_temp_template:
+	cp -a templates/$(TEMPLATE) $(INSTANCE)
+	chmod 0644 $(INSTANCE)/conf/tomcat-users.xml
+ 
 configure:
 	@echo configure
 	cd $(INSTANCE)/conf \
 	&& \
-	sed -e 's;HTTP_PORT=.*;HTTP_PORT=$(HTTP_PORT);'      \
-	    -e 's;AJP13_PORT=.*;AJP13_PORT=$(AJP13_PORT);'   \
-	    -e 's;JMX_PORT=.*;JMX_PORT=$(JMX_PORT);'         \
-	    -e 's;TOMCAT_USER=.*;TOMCAT_USER=$(TOMCAT_USER);'\
+	sed -e 's;HTTP_PORT=.*;HTTP_PORT=$(HTTP_PORT);'             \
+	    -e 's;AJP13_PORT=.*;AJP13_PORT=$(AJP13_PORT);'          \
+	    -e 's;JMX_PORT=.*;JMX_PORT=$(JMX_PORT);'                \
+	    -e 's;TOMCAT_USER=.*;TOMCAT_USER=$(TOMCAT_USER);'       \
 	    instance.env.in > instance.env
 
 fix_perms:
@@ -97,5 +110,9 @@ fix_perms:
 replace_configuration:
 	@echo 'archiving $(INSTANCE)/conf as $(INSTANCE)/conf.$(TS)'
 	mv $(INSTANCE)/conf $(INSTANCE)/conf.$(TS)
-	cp -a Instance_Template/conf $(INSTANCE)/conf
+	cp -a templates/$(TEMPLATE)/conf $(INSTANCE)/conf
 	rm -rf $(INSTANCE)/work/*
+
+restart_notice:
+	@echo
+	@echo "Restart $(INSTANCE) by running 'instance_manager restart $(INSTANCE)'"

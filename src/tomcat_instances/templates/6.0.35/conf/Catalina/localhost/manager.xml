@@ -14,4 +14,7 @@
   <ResourceLink name="users" global="UserDatabase"
                 type="org.apache.catalina.UserDatabase"/>
 
+  <Valve className="org.apache.catalina.valves.RemoteAddrValve"
+                allow="127.0.0.1"/>
+            
 </Context>

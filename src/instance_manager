@@ -5,8 +5,6 @@
 #      Management script for Tomcat instances.                  #
 #      mheiges@uga.edu  2007                                    #
 #                                                               #
-#    $Id: instance_manager 3641 2011-10-18 18:56:09Z bdp $
-#    $URL: https://mango.ctegd.uga.edu/svn/ApiCommonSystem/trunk/Tomcat/bin/instance_manager $
 #///////////////////////////////////////////////////////////////#
 
 # clear invoker's env. Only use what is specified below or by
@@ -21,7 +19,6 @@ pushd $TOMCAT_INSTANCES_DIR &> /dev/null
 
 core_usage() {
     this=`basename $0`
-    instances=`find  -maxdepth 1 -type d -not -name Instance_Template -not -name '.*' -not -name 'shared' -printf '%f '`
     echo
     echo "Manage Tomcat instances and webapps."
     echo
@@ -29,9 +26,10 @@ core_usage() {
     echo "       $this manage <instance> list"
     echo "       $this manage <instance> <start|stop|reload|undeploy|redeploy> <webapp>"
     echo "       $this manage <instance> deploy </path/to/context.xml>"
-    echo "       $this status"
+    echo "       $this status [all]"
     echo
 }
+
 
 usage() {
     core_usage
@@ -40,11 +38,13 @@ usage() {
     exit 1
 }
 
+
 expanded_usage() {
     core_usage
+    local known_instances=`get_known_instances`
     echo "The <instance> option refers to a Tomcat server having its own configuration"
     echo "and JVM process. Known Tomcat instances on this server are:"
-    echo $instances
+    echo "$known_instances"
     echo
     echo "Each instance can be stopped, started and restarted independently of the"
     echo "others. In uncommon cases where the instance will not stop properly, you"
@@ -75,9 +75,24 @@ expanded_usage() {
     echo "  $this manage ApiDB deploy \$PROJECT_HOME/../etc/apidb.dev.xml"
     echo
     echo "The 'status' verb prints the currently running Tomcat instances along with"
-    echo "their process id, process owner, ports and instance uptime."
+    echo "their process id, process owner, ports and instance uptime. Append 'all'"
+    echo "to include instances that are not running."
     echo
+    echo "-------"
+    echo "$this is a product of EuPathDB Bioinformatics Resource Center <help@eupathdb.org>"
     exit 0
+}
+
+get_known_instances() {
+    # an instance is a directory under /usr/local/tomcat_instances with a conf/instance.env file 
+    # and whose name does not have a '_' prefix
+    possible_instances=`find $TOMCAT_INSTANCES_DIR -mindepth 1 -maxdepth 1 -type d -not -name Instance_Template -not -name shared -not -name common -not -name '.*' -not -name '_*' -printf '%f '`
+    declare -a known_instances
+    for dir in $possible_instances; do
+      [[ -f "$TOMCAT_INSTANCES_DIR/$dir/conf/instance.env" ]] && 
+        known_instances[${#known_instances[@]}]="$dir"
+    done
+    echo "${known_instances[@]}"
 }
 
 # Extract a manager username and password from a given instance's
@@ -100,8 +115,9 @@ set_manager_credentials() {
             '$userxml', 
             NormalizeSpace=>2, 
             KeyAttr=>['roles','username'], 
-            ForceArray=>1)->{user}->{manager}; 
-            print \"\$x->{username} \$x->{password}\";"
+            ForceArray=>1);
+            \$c = \$x->{'user'}->{'manager'} || \$x->{'user'}->{'manager-script'}; 
+            print \"\$c->{'username'} \$c->{'password'}\";"
         ))
         
     TC_USER=${cred[0]}
@@ -109,12 +125,45 @@ set_manager_credentials() {
 
 }
 
-prep_start_or_stop() {
 
+require_sudo() {
     if test `id -u` != 0; then 
         echo 'sudo/root permissions required to start or stop.'; exit 4;
     fi
-    
+}
+
+
+# determine the version of Tomcat.
+# The version.sh script is included with Tomcat >= 5.0, don't know about earlier.
+# Basically it runs "java  -classpath $CATALINA_HOME/lib/catalina.jar org.apache.catalina.util.ServerInfo"
+tomcat_version() {
+  $CATALINA_HOME/bin/version.sh | grep '^Server version:' | cut -d'/' -f2
+}
+
+
+# The url path to the Tomcat Manager varies with Tomcat version
+# /manager/<verb> for TC 6, /manager/text/<verb> for TC 7 .
+manager_path_for_version() {
+  local tomcat_version="$1"
+  case "$tomcat_version" in
+    6.*)
+      echo 'manager'
+      ;;
+    7.*)
+      echo 'manager/text'
+      ;;
+    8.*)
+      echo 'manager/text'
+      ;;
+      *)
+      echo  1>&2 "unable to determine the manager's URL path for Tomcat version '${tomcat_version}'" 
+      ;;
+  esac
+}
+
+
+# initialize for management tasks (start, stop, list)
+init_for_managment() {
     [ "$INSTANCE" == "" ] && usage;
     [ ! -d "$INSTANCE" ] && echo "Instance '$INSTANCE' not found." && exit 1;
     
@@ -144,6 +193,8 @@ prep_start_or_stop() {
         exit 1;
     fi
     source $cfg
+
+    PATH="$JAVA_HOME/bin:$PATH"
     
     # Backward compatibility:
     # convert any old SHUTDOWN_PORT configurations to JMX_PORT.
@@ -152,7 +203,7 @@ prep_start_or_stop() {
     JMX_PORT=${JMX_PORT:-$SHUTDOWN_PORT}
     
     # check that we have required values
-    required_cfg=( HTTP_PORT AJP13_PORT JMX_PORT )
+    required_cfg=( HTTP_PORT )
     for opt in ${required_cfg[@]}; do
         [ ! "${!opt}" ] && undefined="$undefined $opt"
     done
@@ -169,7 +220,10 @@ prep_start_or_stop() {
     : ${PID_FILE:=$PID_DIR/jsvc_$INSTANCE.pid}
     : ${CATALINA_BASE:=$TOMCAT_INSTANCES_DIR/$INSTANCE}
 
-
+    TOMCAT_VERSION=`tomcat_version`
+    MANAGER_PATH=`manager_path_for_version $TOMCAT_VERSION`
+    [[ -n "$MANAGER_PATH" ]] || exit 1
+    
     #  properties required for proper function tomcat_instance framework and its support scripts.
     : ${FRAMEWORK_PROPERTIES:="  \
         -Dhttp.port=$HTTP_PORT           \
@@ -198,7 +252,7 @@ prep_start_or_stop() {
       done
     fi
 
-} # prep_start_or_stop()
+} # init_for_managment()
 
 
 # output parent and child processes
@@ -213,7 +267,7 @@ get_pids() {
 
 
 start() {
-    prep_start_or_stop "$@"
+    require_sudo
     
     pids=$(get_pids)
     if [[ -n "$pids" ]]; then
@@ -280,20 +334,21 @@ start() {
     return $exit_status
 }
 
+
 stop() {
-    prep_start_or_stop
+    require_sudo
 
     pids=$(get_pids)
     if [[ -z "$pids" ]]; then
         echo "$INSTANCE is already stopped"
-        exit
+        return
     fi
 
     for arg in "$@"; do
       if [[ "$arg" == "force" ]]; then
           echo killing PIDs $pids...
           kill -9 $pids
-          exit
+          return
       fi
     done
     
@@ -315,6 +370,7 @@ stop() {
 
 }
 
+
 deployFile() {
    cd ~-0 # cd back to user's cwd so a relative path to context.xml file is sensical
    if [[ -z $2 ]]; then
@@ -335,23 +391,29 @@ deployFile() {
    fi
    local context=$(perl -MXML::Simple -e "print XMLin('$context_xml_file', NormalizeSpace=>2)->{path};")
    set_manager_credentials $INSTANCE
-   curl -s "http://$TC_USER:$TC_PASS@127.0.0.1:$HTTP_PORT/manager/deploy?config=file:$context_xml_file&war&path=$context"
+   local deploy_url="http://$TC_USER:$TC_PASS@127.0.0.1:$HTTP_PORT/${MANAGER_PATH}/deploy?config=file:$context_xml_file&war&path=$context"
+   [[ $VERBOSE ]] && echo "fetching '$deploy_url'"
+   curl -s "$deploy_url"
    cd - > /dev/null
 }
 
+
 # pass in context xml to create and deploy from temporary context.xml file
 deployVirtual() {
-   local HTTP_PORT=$1
-   local context_xml_data="$2"
-   local tmp_ctx_file=$(mktemp -tu instance_manager.XXXXXXXXXX) || { 
-       echo "could not create temp context file '$tmp_ctx_file'"; exit 1;
-   }
-   echo "$context_xml_data" > $tmp_ctx_file 
-   local context=$(perl -MXML::Simple -e "print XMLin('$tmp_ctx_file', NormalizeSpace=>2)->{path};")
-   set_manager_credentials $INSTANCE
-   curl -s "http://$TC_USER:$TC_PASS@127.0.0.1:$HTTP_PORT/manager/deploy?config=file:$tmp_ctx_file&war&path=$context"
-   rm -f $tmp_ctx_file || { echo "could not delete temp file '$tmp_ctx_file'. Please manually remove it."; }
+    local HTTP_PORT=$1
+    local context_xml_data="$2"
+    local tmp_ctx_file=$(mktemp -tu instance_manager.XXXXXXXXXX) || { 
+        echo "could not create temp context file '$tmp_ctx_file'"; exit 1;
+    }
+    echo "$context_xml_data" > $tmp_ctx_file 
+    local context=$(perl -MXML::Simple -e "print XMLin('$tmp_ctx_file', NormalizeSpace=>2)->{path};")
+    set_manager_credentials $INSTANCE
+    local deploy_url="http://$TC_USER:$TC_PASS@127.0.0.1:$HTTP_PORT/${MANAGER_PATH}/deploy?config=file:$tmp_ctx_file&war&path=$context"
+    [[ $VERBOSE ]] && echo "fetching '$deploy_url'"
+    curl -s "$deploy_url"
+    rm -f $tmp_ctx_file || { echo "could not delete temp file '$tmp_ctx_file'. Please manually remove it."; }
 }
+
 
 undeploy() {
     echo -n "Whoa, Nelly, do you really want me to remove $webapp from $instance?[y/n] "
@@ -359,44 +421,80 @@ undeploy() {
     [ "$ans" != "y" ] && exit 1
     echo
     [ "$webapp" == "ROOT" ] && unset webapp
-    curl -s "http://$TC_USER:$TC_PASS@127.0.0.1:$HTTP_PORT/manager/undeploy?path=/$webapp"
+    local undeploy_url="http://$TC_USER:$TC_PASS@127.0.0.1:$HTTP_PORT/${MANAGER_PATH}/undeploy?path=/$webapp"
+    [[ $VERBOSE ]] && echo "fetching '$undeploy_url'"
+    curl -s "$undeploy_url"
 }
 
+
 tstatus() {
+
+    local showall=0
+
+    for arg in "$@"; do
+      if [[ "$arg" == "all" ]]; then
+        showall=1
+      fi
+    done
+    
+    # list of all instances found on filesystem. We will remove running instances from the list.
+    offline_instances=`get_known_instances`
+
+    local OLDIFS="$IFS"
     local IFS="
 "
     running_instances="$(ps -fd  | egrep '[j]svc.exe')"
-    
+
     format="%-10.10s %6.6s %10.10s %6.6s %6.6s %6.6s %10s\n"
     
     printf $format INSTANCE PID USER HTTP AJP13 JMX UPTIME
-    for inst in ${running_instances[@]}; do
+    for inst in ${running_instances[@]}; do        
+
         pid=`echo $inst | awk '{print $2}'`
-        instance=`expr "$inst" : '.*Dinstance.name=\([^ ]*\)'`
+        instance_name=`expr "$inst" : '.*Dinstance.name=\([^ ]*\)'`
         http=`expr "$inst" : '.*Dhttp.port=\([^ ]*\)'`
         ajp13=`expr "$inst" : '.*Dajp13.port=\([^ ]*\)'`
         jmx=`expr "$inst" : '.*Dcom.sun.management.jmxremote.port=\([^ ]*\)'`
         user=`expr "$inst" : '.*-user \([^ ]*\) '`
         uptime=`ps -o etime $pid|grep -v ELAPSED | sed 's/[\s\n\r]*//g' | sed "s/\(.*\)-\(.*\):\(.*\):\(.*\)/\1d \2h/; s/\(.*\):\(.*\):\(.*\)/\1h \2m/; s/\(.*\):\(.*\)/\1m \2s/"`
-        printf "$format" "$instance" "$pid" "$user" "$http" "$ajp13" "$jmx" "$uptime"
 
+        # skip any jsvc processes that don't have a corresponding directory that we manage,
+        # assuming that someone must have started it manually.
+        [[ ! -d "${TOMCAT_INSTANCES_DIR}/${instance_name}" ]] && continue
+        
+        printf "$format" "$instance_name" "$pid" "$user" "$http" "$ajp13" "$jmx" "$uptime"
+
+        # remove this running instance from the list
+        offline_instances=`echo $offline_instances | sed "s/\s*${instance_name}\s*//g"`
+        
         # verify ownership of non webapp files
-        cfg=${instance}/conf/instance.env
+        cfg=${instance_name}/conf/instance.env
         if [ -e $cfg ]; then
             source $cfg
-            notowner=${notowner}`find $instance -not -user $TOMCAT_USER -not -path "$instance/webapps/*"`"\n"
+            notowner=${notowner}`find $instance_name -not -user $TOMCAT_USER -not -path "$instance_name/webapps/*"`"\n"
         fi        
 
     done
     
+    local IFS="$OLDIFS"
+
+    if [[ $showall -eq 1 ]]; then 
+      if [[ ${#offline_instances} -gt 0 ]]; then
+        echo "Not running:"
+        for offline in $offline_instances; do echo $offline; done
+      fi
+    fi
+
     exit
 }
+
 
 wstatus() {
    local webapp=$1
    set_manager_credentials $INSTANCE
-   curl -s http://$TC_USER:$TC_PASS@127.0.0.1:$HTTP_PORT/manager/list | egrep "^/$webapp:" | awk -F: "{print \$2}"
+   curl -s "http://$TC_USER:$TC_PASS@127.0.0.1:$HTTP_PORT/${MANAGER_PATH}/list" | egrep "^/$webapp:" | awk -F: "{print \$2}"
 }
+
 
 start_app() {
     local webapp=$1
@@ -415,9 +513,12 @@ start_app() {
       manage $INSTANCE reload $webapp
     else
       set_manager_credentials $INSTANCE
-      curl -s "http://$TC_USER:$TC_PASS@127.0.0.1:$HTTP_PORT/manager/start?path=/$webapp"
+      local start_url="http://$TC_USER:$TC_PASS@127.0.0.1:$HTTP_PORT/${MANAGER_PATH}/start?path=/$webapp"
+      [[ $VERBOSE ]] && echo "fetching '$start_url'"
+      curl -s "$start_url"
     fi
 }
+
 
 manage() {
     [ "$1" == "" ] && usage;
@@ -438,7 +539,9 @@ manage() {
 
     case "$cmd" in
         list)
-            curl -s "http://$TC_USER:$TC_PASS@127.0.0.1:$HTTP_PORT/manager/list"
+            local list_url="http://$TC_USER:$TC_PASS@127.0.0.1:$HTTP_PORT/${MANAGER_PATH}/list"
+            [[ $VERBOSE ]] && echo "fetching '$list_url'"
+            curl -s "$list_url"
             ;;
         stop)
             if [ -z $webapp ]; then
@@ -446,8 +549,10 @@ manage() {
               echo "no webapp given"
               echo
               usage
-            fi           
-            curl -s "http://$TC_USER:$TC_PASS@127.0.0.1:$HTTP_PORT/manager/stop?path=/$webapp"
+            fi
+            local stop_url="http://$TC_USER:$TC_PASS@127.0.0.1:$HTTP_PORT/${MANAGER_PATH}/stop?path=/$webapp"
+            [[ $VERBOSE ]] && echo "fetching '$stop_url'"
+            curl -s "$stop_url"
             ;;
         start)
             if [ -z $webapp ]; then
@@ -471,7 +576,9 @@ manage() {
                 echo
               start_app $webapp
             else
-              curl -s "http://$TC_USER:$TC_PASS@127.0.0.1:$HTTP_PORT/manager/reload?path=/$webapp"
+              local reload_url="http://$TC_USER:$TC_PASS@127.0.0.1:$HTTP_PORT/${MANAGER_PATH}/reload?path=/$webapp"
+              [[ $VERBOSE ]] && echo "fetching '$reload_url'"
+              curl -s "$reload_url"
             fi
             ;;
         undeploy)
@@ -511,35 +618,47 @@ EOF
     esac
 }
 
+
 case "$1" in
   start)
+    init_for_managment "$@"
     start "${@:3}"
     exit $?
     ;;
 
   stop)
+    init_for_managment "$@"
     stop "${@:3}"
     exit $?
     ;;
 
   restart)
+    init_for_managment "$@"
     stop "${@:3}"
     start "${@:3}"
     exit $?
     ;;
 
   stat*)
-    tstatus
+    tstatus "$@"
     ;;
+
   man*)
     shift
+    init_for_managment "$@"
     manage "$@"
     exit $?
     ;;
+
   help)
     expanded_usage
     exit $?
     ;;
+
+  list)
+    get_known_instances
+    ;;
+
   *)
     usage
     ;;

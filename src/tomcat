@@ -8,18 +8,22 @@
 # $URL: https://mango.ctegd.uga.edu/svn/ApiCommonSystem/trunk/Tomcat/bin/tomcat $
 #
 
-INSTANCE_DIR=/usr/local/tomcat_instances
+TOMCAT_INSTANCES_DIR=/usr/local/tomcat_instances
 MANAGER=/usr/bin/instance_manager
-cd $INSTANCE_DIR
+cd $TOMCAT_INSTANCES_DIR
 
 this=`basename $0`
-instances=`find -maxdepth 1 -type d -not -name Instance_Template -not -name shared -not -name common -not -name '.*' -not -name '_*' -printf '%f '`
 
 if [ ! -x ${MANAGER} ]; then
  echo "'${MANAGER}' not found or permissions not valid"
  exit 1
 fi
 
+instances=`${MANAGER} list`
+if [[ $? -ne 0 ]]; then
+  echo "Failed to run '${MANAGER} list'. Unable to continue."
+  exit 1
+fi
 
 start() {
     if test `id -u` != 0; then 
