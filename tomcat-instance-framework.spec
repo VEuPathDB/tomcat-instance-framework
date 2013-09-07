@@ -67,7 +67,7 @@ exit 0
 %defattr(-, tomcat, tomcat)
 %attr(755, root, root) /usr/bin/instance_manager
 %attr(754, root, root) /etc/init.d/tomcat
-/usr/local/%{instance_dir}/Instance_Template
+/usr/local/%{instance_dir}/templates
 /usr/local/%{instance_dir}/Makefile
 /usr/local/%{instance_dir}/shared/webapps
 
