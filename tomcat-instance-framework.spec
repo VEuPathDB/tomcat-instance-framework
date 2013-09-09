@@ -1,7 +1,7 @@
 %define pkg_name tomcat-instance-framework
 %define instance_dir tomcat_instances
 %define required_tomcat_version 6.0.35
-%define required_java_version 1.7.0_25
+%define required_java_version 1.7.0_02
 %define required_oracle_version 11.2.0.3
 %define tomcat_uid 300
 %define packager Mark Heiges <mheiges@uga.edu>
@@ -67,7 +67,7 @@ exit 0
 %defattr(-, tomcat, tomcat)
 %attr(755, root, root) /usr/bin/instance_manager
 %attr(754, root, root) /etc/init.d/tomcat
-/usr/local/%{instance_dir}/templates
+/usr/local/%{instance_dir}/Instance_Template
 /usr/local/%{instance_dir}/Makefile
 /usr/local/%{instance_dir}/shared/webapps
 
@@ -76,8 +76,8 @@ exit 0
 %dir /usr/local/%{instance_dir}/shared/conf
 
 %config /usr/local/%{instance_dir}/shared/conf/cacerts
-%config /usr/local/%{instance_dir}/shared/conf/global.env
-%config /usr/local/%{instance_dir}/shared/conf/tomcat-users.xml
+%config(noreplace) /usr/local/%{instance_dir}/shared/conf/global.env
+%config(noreplace) /usr/local/%{instance_dir}/shared/conf/tomcat-users.xml
 
 %doc /usr/share/doc/%{pkg_name}/Changelog
 %doc /usr/share/doc/%{pkg_name}/ReadMe.md
