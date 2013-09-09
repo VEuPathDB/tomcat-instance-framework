@@ -1,7 +1,7 @@
 %define pkg_name tomcat-instance-framework
 %define instance_dir tomcat_instances
 %define required_tomcat_version 6.0.35
-%define required_java_version 1.7.0_02
+%define required_java_version 1.7.0_25
 %define required_oracle_version 11.2.0.3
 %define tomcat_uid 300
 %define packager Mark Heiges <mheiges@uga.edu>
