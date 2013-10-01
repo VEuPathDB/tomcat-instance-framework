@@ -215,10 +215,10 @@ init_for_managment() {
     fi
 
     : ${JSVC_EXE:=$CATALINA_HOME/bin/jsvc}
-    : ${TMP_DIR:=/var/tmp}
+    : ${CATALINA_BASE:=$TOMCAT_INSTANCES_DIR/$INSTANCE}
+    : ${TMP_DIR:=$CATALINA_BASE/tmp}
     : ${PID_DIR:=/var/run/var/run}
     : ${PID_FILE:=$PID_DIR/jsvc_$INSTANCE.pid}
-    : ${CATALINA_BASE:=$TOMCAT_INSTANCES_DIR/$INSTANCE}
 
     TOMCAT_VERSION=`tomcat_version`
     MANAGER_PATH=`manager_path_for_version $TOMCAT_VERSION`
