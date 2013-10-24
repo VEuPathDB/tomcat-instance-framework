@@ -89,15 +89,15 @@ Extract and compile jsvc.
     make
     cp jsvc ../../bin
 
-You should not make any changes to the configuration files in the installation. All other configuration changes should be made at the instance level as described below.
+You should not make any changes to the configuration files in the installation. Configuration changes should be made at the instance level as described below.
 
 #### Add `sudo` permissions
 
 Individual webapps can be managed using the `instance_manager` script without elevated user privileges. There is no technical restriction on which system user can manage which webapp (see caution about world-readable tomcat-users.xml above) so you should consider establishing a policy on your team on who is responsible for individual webapps.
 
-An instance is stared as a root-owned `jsvc` process ([http://commons.apache.org/proper/commons-daemon/jsvc.html](http://commons.apache.org/proper/commons-daemon/jsvc.html)). Jsvc is a daemon process so started as root and then downgraded to an unprivilegded user. Therefore starting and stopping a Tomcat instance requires root-level permissions, which can be granted to users through `sudo`.
+An instance is started as a root-owned `jsvc` process ([http://commons.apache.org/proper/commons-daemon/jsvc.html](http://commons.apache.org/proper/commons-daemon/jsvc.html)). Jsvc is a daemon process so started as root and then downgraded to an unprivilegded user. Therefore starting and stopping a Tomcat instance requires root-level permissions, which can be granted to users through `sudo`.
 
-Allowing users to restart tomcat instances is optional. You can omit the `sudo` configuration and only allow `root` to peform the action. However, there is little point in having that restriction because our framework lets any user undeploy any webapp so blocking users from restarting Tomcat offers little protection against someone maliciously distrupting the webapps.
+Allowing users to restart tomcat instances is optional. You may omit the `sudo` configuration and only allow `root` to peform the action. However, there is little point in having that restriction because our framework lets any user undeploy any webapp so blocking users from restarting Tomcat offers little protection against someone maliciously distrupting the webapps.
 
 Configuring `sudo` for your specific environment is beyond the scope of this document but basically you need to grant execution for `/usr/bin/instance_manager`. For example,
 
@@ -105,7 +105,7 @@ Configuring `sudo` for your specific environment is beyond the scope of this doc
     Cmnd_Alias INSTANCE_MANAGER = /usr/bin/instance_manager
     DEV_TEAM ALL = NOPASSWD:INSTANCE_MANAGER
 
-We typically allow execution with `NOPASSWD` but it is not required.
+We typically allow execution with `NOPASSWD` but you may require that users enter their password.
 
 #### Create an instance
 
@@ -114,12 +114,12 @@ Before you can launch a Tomcat process using the framework you must create an in
 An instance is created by copying a template and editing an instance.env file. A Makefile is available to execute the necessary steps. It requires root privileges. `cd` to the `tomcat_instances` directory and run `make` with defined variables (run `make` alone to see list of required and optional variables). For example,
 
     $ cd /usr/local/tomcat_instances
-    $ make INSTANCE=FooDB                   \
-      HTTP_PORT=19280                  \
-      AJP13_PORT=19209                 \
-      JMX_PORT=19205                   \
-      TOMCAT_USER=tomcat_Z             \
-      OJDBC_PATH=$ORACLE_HOME/jdbc/lib/ojdbc6.jar            \
+    $ make INSTANCE=FooDB                           \
+      HTTP_PORT=19280                               \
+      AJP13_PORT=19209                              \
+      JMX_PORT=19205                                \
+      TOMCAT_USER=tomcat_Z                          \
+      OJDBC_PATH=$ORACLE_HOME/jdbc/lib/ojdbc6.jar   \
       TEMPLATE=7.0.23
 
 The `make` variables are:
