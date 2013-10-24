@@ -310,9 +310,9 @@ You can have more than one user but at least one user must have one and only one
 
 Changes to `web.xml` are optional. If the default values in `$CATALINA_HOME/config/web.xml` are fine for you then you don't need to include a copy in the template. We typically change the `session-timeout` so the templates bundled with the tomcat-instance-framework reflect this.
 
-`conf/Catalina` directory tree copied from one of the other templates. This tree includes context descriptors for ROOT and manager webapps. The manager.xml defines the Manager app and is needed for `instance_manager` function. The ROOT.xml defines what is served when the root, `'/'`, path is requested.
+`conf/Catalina` directory tree copied from one of the other templates. This tree includes context descriptors for ROOT and manager webapps. The manager.xml defines the Manager app and is required for `instance_manager` function. The ROOT.xml defines what is served when the root, `'/'`, path is requested. When using the bundled ROOT.xml, the root context serves a JSP that summarizes information about the Tomcat server. The ROOT.xml is optional and can be redefined to reference a different webapp.
 
-You'll need a copy of `instance.env.in` in your custom template. Copy it from one of the bundled templates. You will need to overried `CATALINA_HOME` in `instance.env.in` if it different from the definition in the framework's `global.env`
+You'll need a copy of `instance.env.in` in your custom template. Copy it from one of the bundled templates. You will need to override `CATALINA_HOME` in `instance.env.in` if it different from the definition in the framework's `global.env`. `instance.env.in` is copied and edited to `instance.env` by the make process when you create a new instance. 
 
 
 ### Managing Instances
