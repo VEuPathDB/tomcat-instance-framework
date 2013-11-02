@@ -22,7 +22,7 @@ The default framework also enables JMX Remote accessible without authentication 
 
 ### Requirements
 
-This document assumes the reader has prior experience with Apache Tomcat. Our framework is largely an implementation of what is describe in '_Advanced Configuration - Multiple Tomcat Instances_' at [http://tomcat.apache.org/tomcat-7.0-doc/RUNNING.txt](http://tomcat.apache.org/tomcat-7.0-doc/RUNNING.txt) using a set of deployment conventions. You may need to the official Tomcat documentation at [http://tomcat.apache.org/](http://tomcat.apache.org/) for additional information and troubleshooting tips.
+This document assumes the reader has prior experience with Apache Tomcat. Our framework is largely an implementation of what is describe in '_Advanced Configuration - Multiple Tomcat Instances_' at [http://tomcat.apache.org/tomcat-7.0-doc/RUNNING.txt](http://tomcat.apache.org/tomcat-7.0-doc/RUNNING.txt) using a set of deployment conventions. You may need to refer to the official Tomcat documentation at [http://tomcat.apache.org/](http://tomcat.apache.org/) for additional information and troubleshooting tips.
 
 #### Software Requirements
 
