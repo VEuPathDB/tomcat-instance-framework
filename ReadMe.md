@@ -114,7 +114,8 @@ Before you can launch a Tomcat process using the framework you must create an in
 An instance is created by copying a template and editing an instance.env file. A Makefile is available to execute the necessary steps. It requires root privileges. `cd` to the `tomcat_instances` directory and run `make` with defined variables (run `make` alone to see list of required and optional variables). For example,
 
     $ cd /usr/local/tomcat_instances
-    $ make INSTANCE=FooDB                           \
+    $ make install                                  \
+      INSTANCE=FooDB                                \
       HTTP_PORT=19280                               \
       AJP13_PORT=19209                              \
       JMX_PORT=19205                                \
