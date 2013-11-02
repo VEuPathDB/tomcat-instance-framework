@@ -100,7 +100,7 @@ configure:
 
 fix_perms:
 	chmod 0644 $(INSTANCE)/conf/instance.env
-	@if [[ "$(DEFER_USER)" -ne 1 ]]; then \
+	@if [[ "$(DEFER_USER)" -ne 1 && "$(USER)" != "$(TOMCAT_USER)" ]]; then \
 	  chown -R $(TOMCAT_USER):tomcat $(INSTANCE); \
 	fi;
 

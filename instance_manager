@@ -1,5 +1,7 @@
 #!/bin/bash
 
+: ${TOMCAT_INSTANCES_DIR:=/usr/local/tomcat_instances}
+
 #///////////////////////////////////////////////////////////////#
 #                                                               #
 #      Management script for Tomcat instances.                  #
@@ -7,13 +9,16 @@
 #                                                               #
 #///////////////////////////////////////////////////////////////#
 
-# clear invoker's env. Only use what is specified below or by
+# clear invoker's env. Only use what is specified inline or by
 # source-ing instance.env
-unset $(/bin/env | egrep '^(\w+)=(.*)$' | /bin/cut -d= -f1);
+unset $(/bin/env | \
+    egrep -v TOMCAT_INSTANCES_DIR | \
+    egrep '^(\w+)=(.*)$' | \
+    /bin/cut -d= -f1);
+
 export PATH=/bin:/usr/bin:/usr/local/bin
 
 INSTANCE=$2
-TOMCAT_INSTANCES_DIR=/usr/local/tomcat_instances
 
 pushd $TOMCAT_INSTANCES_DIR &> /dev/null
 
@@ -127,6 +132,7 @@ set_manager_credentials() {
 
 
 require_sudo() {
+    return
     if test `id -u` != 0; then 
         echo 'sudo/root permissions required to start or stop.'; exit 4;
     fi
@@ -257,10 +263,18 @@ init_for_managment() {
 
 # output parent and child processes
 get_pids() {
-    pids=$(ps -u $TOMCAT_USER  --format pid,ppid,cmd  | \
+  # processes owned by $TOMCAT_USER
+  # jsvc starts parent (session leader) and child processes, 
+  # For system installs, the session leader is owned by root and
+  # the child is owned by TOMCAT_USER, but when running in 
+  # standalone mode both processes are owned by TOMCAT_USER
+  # so we can't rely solely on 'ps -u' and need to filter out 
+  # the session leader (STAT == 'Ss').
+    pids=$(ps -u $TOMCAT_USER  --format stat,pid,ppid,cmd  | \
+              egrep -v '^Ss  '  | \
               egrep '[j]svc.exe' | \
               egrep "\b$INSTANCE\b" | \
-              awk '{print $1 " " $2}'
+              awk '{print $2 " " $3}'
     )
     echo $pids
 }
@@ -354,10 +368,12 @@ stop() {
     
     echo -n stopping $INSTANCE...
     
-    $JSVC_EXE \
+    STOP_EXEC="$JSVC_EXE \
     -stop \
     -pidfile $PID_FILE \
-    org.apache.catalina.startup.Bootstrap
+    org.apache.catalina.startup.Bootstrap"
+
+    eval $STOP_EXEC
 
     # print a dot on the same line every 5 second that instance is still running
     while [[ -n "$(get_pids)" ]]; do
