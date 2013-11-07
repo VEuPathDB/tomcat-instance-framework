@@ -10,7 +10,7 @@ While these instructions walk through installing TcIF by a regular, non-root use
 
 ### Planning
 
-Java is required. Java installation is not covered in these instructions. Java 1.7 is supported and recommended by EuPathDB, but any version that is compatible with Apache Tomcat should work.
+Java is required. Java 1.7 is supported and recommended by EuPathDB, but any version that is compatible with Apache Tomcat should work. `gcc` is needed to compile C source code for a Tomcat binary. `make` is also needed. The installation of these dependencies is not covered in this document.
 
 By following these instructions you will install Apache Tomcat and TcIF. Each of these products will be contained in their own directory. In this demonstration I will organize these two directories under a `tcif_trial` directory in my home account.
 
@@ -46,24 +46,26 @@ The next step is to compile `jsvc`, a Java service daemon. This requires Java an
     $ make
     $ cp jsvc ../..
 
+This unpacked apache-tomcat-6.0.37 directory is the installed, working directory. Aside from compiling and installing `jsvc` we just did there are no other installation steps for Tomcat.
+
 ### Acquire the TcIF Source
 
     $ cd ~/tcif_trial
-    $ git clone https://github.com/EuPathDB/tomcat-instance-framework.git
-
+    $ wget https://codeload.github.com/EuPathDB/tomcat-instance-framework/zip/master -O tomcat-instance-framework.zip
+    $ unzip tomcat-instance-framework.zip
+    $ rm tomcat-instance-framework.zip 
 
 ### Install TcIF
 
-The source clone has a few files and directories:
+To install Tomcat we simply unpacked the tar.gz file to create the working directory. To install TcIF we will need to copy a directory and some files from the `tomcat-instance-framework-master` source.
 
-The `tomcat_instances` diretory is the core of the framework. It provides the core directory structure where instance and their configurations are stored. Let's make a working copy of it in the trial directory.
+The `tomcat_instances` directory is the core of the framework. It provides the core directory structure where instance and their configurations are stored. Let's make a working copy of it in the trial directory.
 
-    $ cp -a ~/tcif_trial/tomcat-instance-framework/tomcat_instances ~/tcif_trial/
+    $ cp -a ~/tcif_trial/tomcat-instance-framework-master/tomcat_instances ~/tcif_trial/
 
 The `instance_manager` script starts and stops Tomcat instances and manages webapps. You can put it anywhere. My shell's `$PATH` includes a bin directory in my home so I'll put it there.
 
-    $ cp instance_manager ~/bin
-    $ cd tcif_trial/tomcat_instances
+    $ cp ~/tcif_trial/tomcat-instance-framework-master/instance_manager ~/bin
 
 The `tomcat` file in the source clone is an init script for root-owned system installs. We do not need it for this trial.
 
@@ -79,11 +81,13 @@ You may want to put this in your `.bash_profile` so you do not have to remember 
 
 Alternatively, you can edit value of `TOMCAT_INSTANCES_DIR` at the top of the `instance_manager` script.
 
-Edit the `global.env` file in `tomcat_instances/shared/conf/` and set
+Edit `${TOMCAT_INSTANCES_DIR}/shared/conf/global.env` and set the install paths
 
-    CATALINA_HOME=$HOME/tcif_trial/apache-tomcat-6.0.37
-    INSTANCE_DIR=$HOME/tcif_trial/tomcat_instances
-    PID_DIR=$HOME/tcif_trial/tomcat_instances/shared
+    CATALINA_HOME=/home/me/tcif_trial/apache-tomcat-6.0.37
+    INSTANCE_DIR=/home/me/tcif_trial/tomcat_instances
+    PID_DIR=/home/me/tcif_trial/tomcat_instances/shared
+
+*Tip: Do not just copy and past that example, be sure to use the paths for your system.*
 
 `global.env` uses the syntax of a BASH rc file. That is, `key=value` with no spaces around the `=`.
 
@@ -95,7 +99,7 @@ Change to the `tomcat_instances` directory and let's look around.
     $ ls
     Makefile  shared  templates
 
-A Makefile is provided to aid creating an instance from a template in the `templates` directory. See 'Create an instance' in the main documentation for more details.
+A `Makefile` is provided to aid creating an instance from a template in the `templates` directory. See 'Create an instance' in the main documentation for more details.
 
 The Makefile requires some variables set that define specifics of the desired instance. Here I set the TOMCAT_USER to me using the `$USER` environment variable. Of the templates included with TcIF, the closest one to the 6.0.37 version of Tomcat that we installed is `6.0.35` so I'll try that one and hope it is compatible (Spoiler alert: it is). This instance will be named `FooDB`. This name will be used later when starting/stopping the instance and deployng webapps.
 
@@ -139,7 +143,7 @@ We can check that the two apps are running by using the `list` subcommand.
 
 Now that the `FooDB` instance is running on `localhost` on port `19280` (as shown in the status report above), we can make an http request to the root webapp.
 
-    $ curl http://localhost:19280/
+    $ wget -qO- http://localhost:19280/
     ...
     sun.boot.library.path=/usr/java/jdk1.7.0_25/jre/lib/amd64
     java.vm.version=23.25-b01
@@ -153,11 +157,11 @@ The TcIF source includes a sample<sup>1</sup> war file. Oddly, TcIF does not cur
 Make a new directory and unpack the war file in to it
     $ mkdir ~/tcif_trial/sample
     $ cd ~/tcif_trial/sample
-    $ jar xvf  ~/tomcat-instance-framework/docs/sample.war 
+    $ jar xvf  ~/tcif_trial/tomcat-instance-framework-master/docs/sample.war 
 
-Copy the `sample.xml` file 
+Copy the `sample.xml` file (it can go anywhere)
 
-    $ cp ~/tomcat-instance-framework/docs/sample.xml  ~/tcif_trial/
+    $ cp ~/tcif_trial/tomcat-instance-framework-master/docs/sample.xml  ~/tcif_trial/
 
 and set the `docBase` attribute to the full path to the `sample` directory.
 
@@ -165,6 +169,8 @@ and set the `docBase` attribute to the full path to the `sample` directory.
       path="/sample"
       docBase="/home/me/tcif_trial/sample"
     />
+
+*Tip: Do not just copy and past that example, be sure to use the `docBase` path for your system.*
 
 Now deploy the descriptor file with `instance_manager`
 
@@ -188,3 +194,8 @@ Point a browser at the `sample` webapp
 ----
 <sup>1</sup><sub><sup>The sample web app is attributed to the [Tomcat Project developer community.</sup></sub>](http://tomcat.apache.org/tomcat-6.0-doc/appdev/)
 
+### Conclusion
+
+Hopefully you now have a working Tomcat Instance Framework in which you can deploy your web applications.
+
+If you are satisfied with your installation, you may delete the `tomcat-instance-framework-master` source directory; it is no longer needed.
