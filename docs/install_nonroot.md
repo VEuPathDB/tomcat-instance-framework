@@ -10,7 +10,7 @@ While these instructions walk through installing TcIF by a regular, non-root use
 
 ### Planning
 
-Java is required. Java 1.7 is supported and recommended by EuPathDB, but any version that is compatible with Apache Tomcat should work. `gcc` is needed to compile C source code for a Tomcat binary. `make` is also needed. The installation of these dependencies is not covered in this document.
+Java is required. Java 1.7 is supported and recommended by EuPathDB, but any version that is compatible with Apache Tomcat should work. `gcc` is needed to compile C source code for a Tomcat binary. `make` is also needed. The installation of these dependencies is not covered in this document. We will use `wget` and `links` as command line web clients but you can substitute other clients; however, the client probably needs to be running on the same server that TcIF is on because the Tomcat network ports used will most likely be blocked to external clients by a firewall.
 
 By following these instructions you will install Apache Tomcat and TcIF. Each of these products will be contained in their own directory. In this demonstration I will organize these two directories under a `tcif_trial` directory in my home account.
 
