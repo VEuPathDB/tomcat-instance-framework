@@ -99,7 +99,7 @@ Change to the `tomcat_instances` directory and let's look around.
     $ ls
     Makefile  shared  templates
 
-A `Makefile` is provided to aid creating an instance from a template in the `templates` directory. See 'Create an instance' in the main documentation for more details.
+A `Makefile` is provided to aid creating an instance from a template in the `templates` directory. See 'Create an instance' in the [main](TcIF-Manual.md) documentation for more information.
 
 The Makefile requires some variables set that define specifics of the desired instance. Here I set the TOMCAT_USER to me using the `$USER` environment variable. Of the templates included with TcIF, the closest one to the 6.0.37 version of Tomcat that we installed is `6.0.35` so I'll try that one and hope it is compatible (Spoiler alert: it is). This instance will be named `FooDB`. This name will be used later when starting/stopping the instance and deployng webapps.
 
