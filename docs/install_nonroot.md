@@ -191,11 +191,12 @@ Point a browser at the `sample` webapp
 
 *Tip: Your Tomcat instance port may be blocked to remote clients by a firewall, so testing with a command line client and using `localhost` is the most assured way to interact with your webapps.*
 
-----
-<sup>1</sup><sub><sup>The sample web app is attributed to the [Tomcat Project developer community.</sup></sub>](http://tomcat.apache.org/tomcat-6.0-doc/appdev/)
-
 ### Conclusion
 
 Hopefully you now have a working Tomcat Instance Framework in which you can deploy your web applications.
 
 If you are satisfied with your installation, you may delete the `tomcat-instance-framework-master` source directory; it is no longer needed.
+
+----
+<sup>1</sup><sub><sup>The sample web app is attributed to the [Tomcat Project developer community.</sup></sub>](http://tomcat.apache.org/tomcat-6.0-doc/appdev/)
+
