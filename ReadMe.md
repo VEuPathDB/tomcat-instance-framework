@@ -2,7 +2,7 @@
 This doc is written with Markdown syntax.
 http://daringfireball.net/projects/markdown/
 -->
-![logo](/doc/catherder_branded.png) 
+![logo](docs/catherder_branded.png) 
 
 ## EuPathDB Tomcat Instance Framework
 
