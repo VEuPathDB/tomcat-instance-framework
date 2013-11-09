@@ -2,6 +2,8 @@
 This doc is written with Markdown syntax.
 http://daringfireball.net/projects/markdown/
 -->
+![logo](catherder_branded.png) 
+
 ## EuPathDB Tomcat Instance Framework (TcIF) Manual
 
 ### Background
