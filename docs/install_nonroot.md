@@ -195,7 +195,7 @@ Hopefully you now have a working Tomcat Instance Framework in which you can depl
 
 If you are satisfied with your installation, you may delete the `tomcat-instance-framework-master` source directory; it is no longer needed.
 
-To delete your whole trial installation, simply delete the trial directory and copy of te `instance_manager` script.
+To delete your whole trial installation, simply delete the trial directory and copy of the `instance_manager` script.
 
     $ cd ~
     $ rm -rf  ~/tcif_trial/
