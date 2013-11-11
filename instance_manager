@@ -231,11 +231,12 @@ init_for_managment() {
     [[ -n "$MANAGER_PATH" ]] || exit 1
     
     #  properties required for proper function tomcat_instance framework and its support scripts.
-    : ${FRAMEWORK_PROPERTIES:="  \
-        -Dhttp.port=$HTTP_PORT           \
-        -Dajp13.port=$AJP13_PORT         \
-        -Dshutdown.port=-1               \
-        -Dinstance.name=$INSTANCE        \
+    : ${FRAMEWORK_PROPERTIES:="           \
+        -Dhttp.port=$HTTP_PORT            \
+        -Dajp13.port=$AJP13_PORT          \
+        -Dshutdown.port=-1                \
+        -Dinstance.name=$INSTANCE         \
+        -Dtcif.root=$TOMCAT_INSTANCES_DIR \
     "}
     
     
