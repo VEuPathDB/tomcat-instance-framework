@@ -81,12 +81,11 @@ You may want to put this in your `.bash_profile` so you do not have to remember 
 
 Alternatively, you can edit value of `TOMCAT_INSTANCES_DIR` at the top of the `instance_manager` script.
 
-Edit `${TOMCAT_INSTANCES_DIR}/shared/conf/global.env` and set the install paths.
-
-*Tip: Do not just copy and paste this example, be sure to use the paths for your system.*
+Edit `${TOMCAT_INSTANCES_DIR}/shared/conf/global.env` and set the install paths. *Tip: Do not just copy and paste this example, be sure to use the paths for your system.*
 
     CATALINA_HOME=/home/mheiges/tcif_trial/apache-tomcat-6.0.37
     INSTANCE_DIR=/home/mheiges/tcif_trial/tomcat_instances
+    JAVA_HOME=/usr/java/jdk1.7.0
     PID_DIR=/home/mheiges/tcif_trial/tomcat_instances/shared
 
 `global.env` uses the syntax of a BASH rc file. That is, `key=value` with no spaces around the `=`.
@@ -163,14 +162,12 @@ Copy the `sample.xml` file (it can go anywhere)
 
     $ cp ~/tcif_trial/tomcat-instance-framework-master/docs/sample.xml  ~/tcif_trial/
 
-and set the `docBase` attribute to the full path to the `sample` directory.
+and set the `docBase` attribute to the full path to the `sample` directory. *Tip: Do not just copy and past that example, be sure to use the `docBase` path for your system.*
 
     <Context 
       path="/sample"
       docBase="/home/mheiges/tcif_trial/sample"
     />
-
-*Tip: Do not just copy and past that example, be sure to use the `docBase` path for your system.*
 
 Now deploy the descriptor file with `instance_manager`
 
