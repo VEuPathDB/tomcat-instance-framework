@@ -39,7 +39,7 @@ We don't need the tar file anymore so let's tidy up.
 
 The next step is to compile `jsvc`, a Java service daemon. This requires Java and you  need to have the `JAVA_HOME` environment variable set. If java is not installed, then you'll need to download and install that as well. Installing Java is beyond the scope of this document (I gotta draw the line somewhere) but it can be as simple as downloading and upacking a tar file.
 
-    $ cd ~/tcif_trial/apache-tomcat-6.0.37/bin
+    $ cd ~/tcif_trial/apache-tomcat-6.0.37/bin/
     $ tar zxf commons-daemon-native.tar.gz
     $ cd commons-daemon-*-native-src/unix
     $ ./configure --with-java=$JAVA_HOME
@@ -65,7 +65,7 @@ The `tomcat_instances` directory is the core of the framework. It provides the c
 
 The `instance_manager` script starts and stops Tomcat instances and manages webapps. You can put it anywhere. My shell's `$PATH` includes a bin directory in my home so I'll put it there.
 
-    $ cp ~/tcif_trial/tomcat-instance-framework-master/instance_manager ~/bin
+    $ cp ~/tcif_trial/tomcat-instance-framework-master/instance_manager ~/bin/
 
 The `tomcat` file in the source clone is an init script for root-owned system installs. We do not need it for this trial.
 
@@ -81,13 +81,13 @@ You may want to put this in your `.bash_profile` so you do not have to remember 
 
 Alternatively, you can edit value of `TOMCAT_INSTANCES_DIR` at the top of the `instance_manager` script.
 
-Edit `${TOMCAT_INSTANCES_DIR}/shared/conf/global.env` and set the install paths
+Edit `${TOMCAT_INSTANCES_DIR}/shared/conf/global.env` and set the install paths.
 
-    CATALINA_HOME=/home/me/tcif_trial/apache-tomcat-6.0.37
-    INSTANCE_DIR=/home/me/tcif_trial/tomcat_instances
-    PID_DIR=/home/me/tcif_trial/tomcat_instances/shared
+*Tip: Do not just copy and paste this example, be sure to use the paths for your system.*
 
-*Tip: Do not just copy and past that example, be sure to use the paths for your system.*
+    CATALINA_HOME=/home/mheiges/tcif_trial/apache-tomcat-6.0.37
+    INSTANCE_DIR=/home/mheiges/tcif_trial/tomcat_instances
+    PID_DIR=/home/mheiges/tcif_trial/tomcat_instances/shared
 
 `global.env` uses the syntax of a BASH rc file. That is, `key=value` with no spaces around the `=`.
 
@@ -139,7 +139,7 @@ We can check that the two apps are running by using the `list` subcommand.
     $ instance_manager manage FooDB list
     OK - Listed applications for virtual host localhost
     /manager:running:0:/home/mheiges/tcif_trial/apache-tomcat-6.0.37/webapps/manager
-    /:running:2:/usr/local/tomcat_instances/shared/webapps/ROOT
+    /:running:0:/home/mheiges/tcif_trial/tomcat_instances/shared/webapps/ROOT
 
 Now that the `FooDB` instance is running on `localhost` on port `19280` (as shown in the status report above), we can make an http request to the root webapp.
 
@@ -167,7 +167,7 @@ and set the `docBase` attribute to the full path to the `sample` directory.
 
     <Context 
       path="/sample"
-      docBase="/home/me/tcif_trial/sample"
+      docBase="/home/mheiges/tcif_trial/sample"
     />
 
 *Tip: Do not just copy and past that example, be sure to use the `docBase` path for your system.*
@@ -182,7 +182,7 @@ List the apps deployed in the `FooDB` instance to see that `/sample` is running.
     $ instance_manager manage FooDB list
     OK - Listed applications for virtual host localhost
     /manager:running:0:/home/mheiges/tcif_trial/apache-tomcat-6.0.37/webapps/manager
-    /:running:2:/usr/local/tomcat_instances/shared/webapps/ROOT
+    /:running:0:/home/mheiges/tcif_trial/tomcat_instances/shared/webapps/ROOT
     /sample:running:0:/home/mheiges/tcif_trial/sample
 
 Point a browser at the `sample` webapp
