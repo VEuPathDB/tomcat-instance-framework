@@ -154,6 +154,7 @@ Now that the `FooDB` instance is running on `localhost` on port `19280` (as show
 The TcIF source includes a sample<sup>1</sup> war file. Oddly, TcIF does not currently support deploying a war file. So we will unpack the war file and deploy it using a context descriptor file.
 
 Make a new directory and unpack the war file in to it
+
     $ mkdir ~/tcif_trial/sample
     $ cd ~/tcif_trial/sample
     $ jar xvf  ~/tcif_trial/tomcat-instance-framework-master/docs/sample.war 
@@ -190,7 +191,7 @@ Point a browser at the `sample` webapp
 
 ### Conclusion
 
-Hopefully you now have a working Tomcat Instance Framework in which you can deploy your web applications.
+Hopefully you now have a working Tomcat Instance Framework in which you can deploy your web applications using a context descriptor file simliar to the way you deployed the sample webapp.
 
 If you are satisfied with your installation, you may delete the `tomcat-instance-framework-master` source directory; it is no longer needed.
 
