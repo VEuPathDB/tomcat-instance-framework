@@ -163,7 +163,7 @@ Copy the `sample.xml` file (it can go anywhere)
 
     $ cp ~/tcif_trial/tomcat-instance-framework-master/docs/sample.xml  ~/tcif_trial/
 
-and set the `docBase` attribute to the full path to the `sample` directory. *Tip: Do not just copy and past that example, be sure to use the `docBase` path for your system.*
+and set the `docBase` attribute to the full path to the `sample` directory. *Tip: Do not just copy and paste this example, be sure to use the `docBase` path for your system.*
 
     <Context 
       path="/sample"
