@@ -18,19 +18,38 @@ in response to requests for non-existant contexts
     /**
      * Dump the system properties
      */
-    java.util.Enumeration e=null;
+    java.util.Enumeration props = null;
     try {
-        e= System.getProperties().propertyNames();
+        props = System.getProperties().propertyNames();
     } catch (SecurityException se) {
     }
-    if(e!=null) {
+    if(props != null) {
         out.write("<pre>");
-        for (;e.hasMoreElements();) {
-            String key = (String) e.nextElement();
+        for (;props.hasMoreElements();) {
+            String key = (String) props.nextElement();
             out.write(key + "=" + System.getProperty(key)+"\n");
         }
         out.write("</pre><p>");
     } else {
         out.write("System properties are not accessible.");
     }
+%>
+
+<h2>Examining System Environment</h2>
+<%
+    java.util.Map<String, String> env = null;
+    try {
+        env = System.getenv();
+    } catch (SecurityException se) {
+    }
+    if(env != null) {
+        out.write("<pre>");
+        for (String envName : env.keySet()) {
+            out.write(envName + "=" + env.get(envName)+"\n");
+        }
+        out.write("</pre><p>");
+    } else {
+        out.write("System environment is not accessible.");
+    }
+  
 %>
