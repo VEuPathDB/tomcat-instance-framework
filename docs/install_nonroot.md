@@ -10,7 +10,7 @@ While these instructions walk through installing TcIF by a regular, non-root use
 
 ### Planning
 
-Java is required. Java 1.7 is supported and recommended by EuPathDB, but any version that is compatible with Apache Tomcat should work. `gcc` is needed to compile C source code for a Tomcat binary. `make` is also needed. The installation of these dependencies is not covered in this document. We will use `wget` and `links` as command line web clients but you can substitute other clients; however, the client probably needs to be running on the same server that TcIF is on because the Tomcat network ports used will most likely be blocked to external clients by a firewall.
+Java is required. Java 1.7 is supported and recommended by EuPathDB, but any version that is compatible with Apache Tomcat should work. `make` and `gcc` ars needed to compile C source code for a Tomcat binary. The installation of these dependencies is not covered in this document. We will use `wget` and `links` as command line web clients but you can substitute other clients; however, the client probably needs to be running on the same server that TcIF is on because the Tomcat network ports used will most likely be blocked to external clients by a firewall.
 
 By following these instructions you will install Apache Tomcat and TcIF. Each of these products will be contained in their own directory. In this demonstration I will organize these two directories under a `tcif_trial` directory in my home account.
 
@@ -39,6 +39,8 @@ We don't need the tar file anymore so let's tidy up.
 
 The next step is to compile `jsvc`, a Java service daemon. This requires Java and you  need to have the `JAVA_HOME` environment variable set. If java is not installed, then you'll need to download and install that as well. Installing Java is beyond the scope of this document (I gotta draw the line somewhere) but it can be as simple as downloading and upacking a tar file.
 
+Compile and install `jsvc` as follows.
+
     $ cd ~/tcif_trial/apache-tomcat-6.0.37/bin/
     $ tar zxf commons-daemon-native.tar.gz
     $ cd commons-daemon-*-native-src/unix
@@ -46,7 +48,7 @@ The next step is to compile `jsvc`, a Java service daemon. This requires Java an
     $ make
     $ cp jsvc ../..
 
-This unpacked apache-tomcat-6.0.37 directory is the installed, working directory. Aside from compiling and installing `jsvc` we just did there are no other installation steps for Tomcat.
+This unpacked apache-tomcat-6.0.37 directory is the installed, working directory. Aside from compiling and installing `jsvc` as we just did there are no other installation steps for Tomcat.
 
 ### Acquire the TcIF Source
 
@@ -57,7 +59,7 @@ This unpacked apache-tomcat-6.0.37 directory is the installed, working directory
 
 ### Install TcIF
 
-To install Tomcat we simply unpacked the tar.gz file to create the working directory. To install TcIF we will need to copy a directory and some files from the `tomcat-instance-framework-master` source.
+To install TcIF we will need to copy a directory and some files from the `tomcat-instance-framework-master` source.
 
 The `tomcat_instances` directory is the core of the framework. It provides the core directory structure where instance and their configurations are stored. Let's make a working copy of it in the trial directory.
 
@@ -98,7 +100,7 @@ Change to the `tomcat_instances` directory and let's look around.
     $ ls
     Makefile  shared  templates
 
-A `Makefile` is provided to aid creating an instance from a template in the `templates` directory. See 'Create an instance' in the [main](TcIF-Manual.md) documentation for more information.
+A `Makefile` is provided to aid creating an instance from a template in the `templates` directory. See '[Create an instance](TcIF-Manual.md#create-an-instance)' in the main documentation for more information.
 
 The Makefile requires some variables set that define specifics of the desired instance. Here I set the TOMCAT_USER to me using the `$USER` environment variable. Of the templates included with TcIF, the closest one to the 6.0.37 version of Tomcat that we installed is `6.0.35` so I'll try that one and hope it is compatible (Spoiler alert: it is). This instance will be named `FooDB`. This name will be used later when starting/stopping the instance and deployng webapps.
 
