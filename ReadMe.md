@@ -8,7 +8,7 @@ http://daringfireball.net/projects/markdown/
 
 ### Background
 
-The EuPathDB tomcat-instance-framework allows easy setup and management of multiple Apache Tomcat instances from one or more binary installation. It was originally developed to support WDK-based installations for the EuPathDB-BRC project but we have found it versatile enough to be used for any web application in Tomcat.
+The EuPathDB tomcat-instance-framework allows easy setup and management of multiple Apache Tomcat instances from one or more binary installations. It was originally developed to support WDK-based installations for the EuPathDB-BRC project but we have found it versatile enough to be used for any web application in Tomcat.
 
 Features include
 
