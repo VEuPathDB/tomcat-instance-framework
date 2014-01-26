@@ -435,12 +435,13 @@ deployVirtual() {
 
 
 undeploy() {
+    local webapp=$1
+    local tomcat_ctx=$([ "$webapp" == "ROOT" ] && echo "/" || echo "/$webapp")
     echo -n "Whoa, Nelly, do you really want me to remove $webapp from $instance?[y/n] "
     read ans
     [ "$ans" != "y" ] && exit 1
     echo
-    [ "$webapp" == "ROOT" ] && unset webapp
-    local undeploy_url="http://$TC_USER:$TC_PASS@127.0.0.1:$HTTP_PORT/${MANAGER_PATH}/undeploy?path=/$webapp"
+    local undeploy_url="http://$TC_USER:$TC_PASS@127.0.0.1:$HTTP_PORT/${MANAGER_PATH}/undeploy?path=$tomcat_ctx"
     [[ $VERBOSE ]] && echo "fetching '$undeploy_url'"
     curl -s "$undeploy_url"
 }
@@ -511,8 +512,9 @@ tstatus() {
 
 wstatus() {
    local webapp=$1
+   local tomcat_ctx=$([ "$webapp" == "ROOT" ] && echo "/" || echo "/$webapp")
    set_manager_credentials $INSTANCE
-   curl -s "http://$TC_USER:$TC_PASS@127.0.0.1:$HTTP_PORT/${MANAGER_PATH}/list" | egrep "^/$webapp:" | awk -F: "{print \$2}"
+   curl -s "http://$TC_USER:$TC_PASS@127.0.0.1:$HTTP_PORT/${MANAGER_PATH}/list" | egrep "^$tomcat_ctx:" | awk -F: "{print \$2}"
 }
 
 
@@ -524,6 +526,8 @@ start_app() {
       echo
       usage
     fi
+
+    local tomcat_ctx=$([ "$webapp" == "ROOT" ] && echo "/" || echo "/$webapp")
     
     if [ "`wstatus $webapp`" == "running" ]; then
       echo
@@ -533,7 +537,7 @@ start_app() {
       manage $INSTANCE reload $webapp
     else
       set_manager_credentials $INSTANCE
-      local start_url="http://$TC_USER:$TC_PASS@127.0.0.1:$HTTP_PORT/${MANAGER_PATH}/start?path=/$webapp"
+      local start_url="http://$TC_USER:$TC_PASS@127.0.0.1:$HTTP_PORT/${MANAGER_PATH}/start?path=$tomcat_ctx"
       [[ $VERBOSE ]] && echo "fetching '$start_url'"
       curl -s "$start_url"
     fi
@@ -547,6 +551,7 @@ manage() {
     local cmd=$2
     local context=$3
     local webapp=$(echo "$3" | sed -e "s/^\///")
+    local tomcat_ctx=$([ "$webapp" == "ROOT" ] && echo "/" || echo "/$webapp")
 
     local cfg=${instance}/conf/instance.env
     if [ ! -e $cfg ]; then
@@ -571,7 +576,7 @@ manage() {
               echo
               usage
             fi
-            local stop_url="http://$TC_USER:$TC_PASS@127.0.0.1:$HTTP_PORT/${MANAGER_PATH}/stop?path=/$webapp"
+            local stop_url="http://$TC_USER:$TC_PASS@127.0.0.1:$HTTP_PORT/${MANAGER_PATH}/stop?path=$tomcat_ctx"
             [[ $VERBOSE ]] && echo "fetching '$stop_url'"
             curl -s "$stop_url"
             ;;
@@ -597,7 +602,7 @@ manage() {
                 echo
               start_app $webapp
             else
-              local reload_url="http://$TC_USER:$TC_PASS@127.0.0.1:$HTTP_PORT/${MANAGER_PATH}/reload?path=/$webapp"
+              local reload_url="http://$TC_USER:$TC_PASS@127.0.0.1:$HTTP_PORT/${MANAGER_PATH}/reload?path=$tomcat_ctx"
               [[ $VERBOSE ]] && echo "fetching '$reload_url'"
               curl -s "$reload_url"
             fi
@@ -609,14 +614,14 @@ manage() {
               echo
               usage
             fi           
-            undeploy
+            undeploy $webapp
             ;;
         redeploy)
             ctx_xml_file="$TOMCAT_INSTANCES_DIR/$instance/conf/Catalina/localhost/$webapp.xml"
             contextXmlData="$(cat $ctx_xml_file)" || {
                 echo "'$ctx_xml_file' not found or is not readable. Is $webapp deployed in $instance? Quitting."; exit 1;
             }
-            undeploy
+            undeploy $webapp
             deployVirtual $HTTP_PORT "$contextXmlData"
             ;;
         deploy)
