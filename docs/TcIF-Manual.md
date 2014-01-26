@@ -313,7 +313,9 @@ You'll need a copy of `instance.env.in` in your custom template. Copy it from on
 
 ### Managing Instances
 
-The `instance_manager` script included with the framework handles most of the management tasks for the tomcat instances. This script is developed by EuPathDB and is unique to framework so please report any problems or related questions to help@eupathdb.org. Running `instance_manager` without any options will print a brief usage text.
+The `instance_manager` script included with the framework handles most of the management tasks for the tomcat instances. This script is developed by EuPathDB and is unique to framework so please report any problems or related questions to help@eupathdb.org. 
+
+Running `instance_manager` without any options will print a brief usage text.
 
       $ instance_manager 
       
@@ -335,11 +337,10 @@ Start, stop and restart of an instance requires sudo or root permissions, as exp
     $ sudo instance_manager start FooDB
     starting FooDB...
 
-
     $ sudo instance_manager stop FooDB
     stopping FooDB...
 
-The start and stop actions are effected using the `jsvc -stop` command. See [http://commons.apache.org/proper/commons-daemon/jsvc.html](http://commons.apache.org/proper/commons-daemon/jsvc.html) for details. Stopping an instance an take several minutes, especially if it has been running for a long time and is low on memory.
+The stop command attempts to shutdown the instance with a call to `jsvc -stop`. See [http://commons.apache.org/proper/commons-daemon/jsvc.html](http://commons.apache.org/proper/commons-daemon/jsvc.html) for details. Stopping an instance may take several minutes, especially if it has been running for a long time and is low on memory.
 
 Sometimes the instance will be in such a degraded state that `jsvc`is unable to stop the instance. It's even possible for `jsvc` confuse `instance_manager` into thinking the process has stopped but in fact it is still running and visible only through a `ps` listing. In such situations the only resolution is to kill the jsvc processes. Appending the `force` option to `instance_manager` will invoke a `kill -9` on the PIDs (there will usually be two: one for the root-owned parent and one for the spawned process owned by `TOMCAT_USER`).
 
