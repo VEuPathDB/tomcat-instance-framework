@@ -132,7 +132,6 @@ set_manager_credentials() {
 
 
 require_sudo() {
-    return
     if test `id -u` != 0; then 
         echo 'sudo/root permissions required to start or stop.'; exit 4;
     fi
