@@ -35,7 +35,6 @@ core_usage() {
     echo
 }
 
-
 usage() {
     core_usage
     echo "Use '$this help' for expanded information."
