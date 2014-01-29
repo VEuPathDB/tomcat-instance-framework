@@ -12,7 +12,7 @@
 # clear invoker's env. Only use what is specified inline or by
 # source-ing instance.env
 unset $(/bin/env | \
-    egrep -v TOMCAT_INSTANCES_DIR | \
+    egrep -v 'TOMCAT_INSTANCES_DIR|USER' | \
     egrep '^(\w+)=(.*)$' | \
     /bin/cut -d= -f1);
 
@@ -132,7 +132,7 @@ set_manager_credentials() {
 
 
 require_sudo() {
-    if test `id -u` != 0; then 
+    if [[ "$TOMCAT_USER" != "$USER" && `id -u` != 0 ]]; then 
         echo 'sudo/root permissions required to start or stop.'; exit 4;
     fi
 }
