@@ -69,6 +69,8 @@ The `instance_manager` script starts and stops Tomcat instances and manages weba
 
     $ cp ~/tcif_trial/tomcat-instance-framework-master/instance_manager ~/bin/
 
+*Tip: If your system already has TcIF installed with `instance_manager` in your `$PATH`, be careful about which copy you are using or you may run into errors due to version incompatibilities. If in doubt, execute the script using the full path.*
+
 The `tomcat` file in the source clone is an init script for root-owned system installs. We do not need it for this trial.
 
 ### Configure TcIF
@@ -190,6 +192,16 @@ Point a browser at the `sample` webapp
     $ links http://localhost:19280/sample/
 
 *Tip: Your Tomcat instance port may be blocked to remote clients by a firewall, so testing with a command line client and using `localhost` is the most assured way to interact with your webapps.*
+
+### Adding Shared Classes
+
+Any global classes your applications need deployed in the instance go in the `shared/lib/` directory of the instance. For example, to install an Oracle jdbc driver
+
+    $ cp $ORACLE_HOME/jdbc/lib/ojdbc6.jar ~/tcif_trial/tomcat_instances/FooDB/shared/lib/
+
+Then restart the instance
+
+    $ instance_manager restart FooDB
 
 ### Conclusion
 
