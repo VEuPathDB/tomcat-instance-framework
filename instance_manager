@@ -11,11 +11,12 @@
 
 # clear invoker's env. Only use what is specified inline or by
 # source-ing instance.env
-unset $(/bin/env | \
+unset $(/usr/bin/env | \
     egrep -v 'TOMCAT_INSTANCES_DIR|USER' | \
     egrep '^(\w+)=(.*)$' | \
-    /bin/cut -d= -f1);
+    /usr/bin/cut -d= -f1);
 
+export TERM=vt100 # for help piped through less
 export PATH=/bin:/usr/bin:/usr/local/bin
 
 INSTANCE=$2
@@ -44,47 +45,51 @@ usage() {
 
 
 expanded_usage() {
-    core_usage
     local known_instances=`get_known_instances`
-    echo "The <instance> option refers to a Tomcat server having its own configuration"
-    echo "and JVM process. Known Tomcat instances on this server are:"
-    echo "$known_instances"
-    echo
-    echo "Each instance can be stopped, started and restarted independently of the"
-    echo "others. In uncommon cases where the instance will not stop properly, you"
-    echo "can 'stop' with  the 'force' option to kill the JVM. The 'start', 'stop'"
-    echo "and 'restart' actions of the Tomcat instance affects all contained webapps."
-    echo "Therefore these actions require sudo permissions. Example:"
-    echo "  sudo $this restart ApiDB"
-    echo 
-    echo "The 'manage' verb allows you to act within a given instance. The manage actions"
-    echo "do not require sudo permissions. The 'list' action will print the webapps"
-    echo "deployed in the instance and and their running state. Example:"
-    echo "  $this manage ApiDB list"
-    echo
-    echo "A given <webapp> can be started, stopped, reloaded, undeployed or redeployed"
-    echo "from the instance being managed. Example:"
-    echo "  $this manage ApiDB reload apidb.dev"
-    echo
-    echo "A 'redeploy' action first undeploys the existing context xml file from the"
-    echo "instance and then deploys that same xml file back in. The primary use case"
-    echo "for redeploy is to clear the webapp's cache of compiled JSP."
-    echo "If you want to change the context configuration then you must first undeploy"
-    echo "the webapp and then deploy a new, edited copy of the context xml file."
-    echo
-    echo "A webapp can be added to the instance via the 'deploy' command. A webapp"
-    echo "may not be running after deployment, so monitor the Tomcat logs during"
-    echo "deployment or use the $this 'list' command to check the webapp's"
-    echo "state after deploying. Example:"
-    echo "  $this manage ApiDB deploy \$PROJECT_HOME/../etc/apidb.dev.xml"
-    echo
-    echo "The 'status' verb prints the currently running Tomcat instances along with"
-    echo "their process id, process owner, ports and instance uptime. Append 'all'"
-    echo "to include instances that are not running."
-    echo
-    echo "-------"
-    echo "$this is a product of EuPathDB Bioinformatics Resource Center <help@eupathdb.org>"
-    exit 0
+    (
+      core_usage
+      echo "The <instance> option refers to a Tomcat server having its own configuration"
+      echo "and JVM process. Known Tomcat instances on this server are:"
+      echo "$known_instances"
+      echo
+      echo "Each instance can be stopped, started and restarted independently of the"
+      echo "others. In uncommon cases where the instance will not stop properly, you"
+      echo "can 'stop' with  the 'force' option to kill the JVM. The 'start', 'stop'"
+      echo "and 'restart' actions of the Tomcat instance affects all contained webapps."
+      echo "Therefore these actions require sudo permissions. Example:"
+      echo "  sudo $this restart ApiDB"
+      echo 
+      echo "The 'manage' verb allows you to act within a given instance. The manage actions"
+      echo "do not require sudo permissions. The 'list' action will print the webapps"
+      echo "deployed in the instance and and their running state. Example:"
+      echo "  $this manage ApiDB list"
+      echo
+      echo "A given <webapp> can be started, stopped, reloaded, undeployed or redeployed"
+      echo "from the instance being managed. Example:"
+      echo "  $this manage ApiDB reload apidb.dev"
+      echo
+      echo "A 'redeploy' action first undeploys the existing context xml file from the"
+      echo "instance and then deploys that same xml file back in. The primary use case"
+      echo "for redeploy is to clear the webapp's cache of compiled JSP."
+      echo "If you want to change the context configuration then you must first undeploy"
+      echo "the webapp and then deploy a new, edited copy of the context xml file."
+      echo
+      echo "A webapp can be added to the instance via the 'deploy' command. A webapp"
+      echo "may not be running after deployment, so monitor the Tomcat logs during"
+      echo "deployment or use the $this 'list' command to check the webapp's"
+      echo "state after deploying. Example:"
+      echo "  $this manage ApiDB deploy \$PROJECT_HOME/../etc/apidb.dev.xml"
+      echo
+      echo "The 'status' verb prints the currently running Tomcat instances along with"
+      echo "their process id, process owner, ports and instance uptime. Append 'all'"
+      echo "to include instances that are not running."
+      echo
+      echo "See http://s.eupathdb.org/1gjo853 for full documentation."
+      echo
+      echo "-------"
+      echo "$this is a product of EuPathDB Bioinformatics Resource Center <help@eupathdb.org>"
+    ) | less
+    exit $PIPESTATUS 
 }
 
 get_known_instances() {
@@ -96,7 +101,11 @@ get_known_instances() {
       [[ -f "$TOMCAT_INSTANCES_DIR/$dir/conf/instance.env" ]] && 
         known_instances[${#known_instances[@]}]="$dir"
     done
-    echo "${known_instances[@]}"
+    if [[ ${#known_instances[@]} -eq 0 ]];then
+      echo "<none found>"
+    else
+      echo "${known_instances[@]}"
+    fi
 }
 
 # Extract a manager username and password from a given instance's
