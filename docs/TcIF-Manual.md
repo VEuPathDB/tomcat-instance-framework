@@ -55,9 +55,11 @@ Most of the required software is available as RPMs from RedHat/CentOS and EPEL y
 
 *Skip this section if doing a non-root install*
 
-    yum install tomcat-instance-framework
+Download the latest x86_64.rpm RPM from [https://github.com/EuPathDB/tomcat-instance-framework/releases](https://github.com/EuPathDB/tomcat-instance-framework/releases) and run
 
-The tomcat-instance-framework rpm depends on one of our Tomcat RPMs but you can install the framework using `rpm --nodeps` if you want to install Tomcat manually.
+    yum --nogpgcheck localinstall tomcat-instance-framework-*-x86_64.rpm
+    
+The tomcat-instance-framework rpm depends on one of our Tomcat RPMs available from EuPathDB's primary YUM repo but you can install the framework using `rpm --nodeps` if you want to install Tomcat manually.
 
 The three main items of interest installed by the RPM are
 
