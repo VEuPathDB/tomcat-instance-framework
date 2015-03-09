@@ -42,8 +42,8 @@ all:
   TEMPLATE=7.0.23'
 	@echo
 	@echo 'Optional variables:'
-	@echo '  ORCL_JDBC_PATH=$ORACLE_HOME/jdbc/lib/ojdbc6.jar'
-	@echo '  PG_JDBC_PATH=$PG_HOME/lib/java/postgresql92-jdbc.jar'
+	@echo '  ORCL_JDBC_PATH=$$ORACLE_HOME/jdbc/lib/ojdbc6.jar'
+	@echo '  PG_JDBC_PATH=$$PG_HOME/lib/java/postgresql92-jdbc.jar'
 
 install : can_install copy_temp_template install_oracle_driver install_pg_driver configure fix_perms
 update: can_update install_oracle_driver install_pg_driver replace_configuration configure fix_perms restart_notice
