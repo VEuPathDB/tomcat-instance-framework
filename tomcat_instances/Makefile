@@ -26,7 +26,9 @@
 #    DEFER_USER=1  - do not do check and chown for user. Useful for RPM builds on naive servers, 
 #                    assuming the RPM install process does the chown (e.g. using %attr() ).
 
-TS=$(shell date +%y%m%d%H%M%S)
+TS := $(shell date +%y%m%d%H%M%S)
+MANAGER_USER := $(shell tr -dc A-Za-z0-9 < /dev/urandom | head -c 12 )
+MANAGER_PASSWD := $(shell tr -dc A-Za-z0-9 < /dev/urandom | head -c 12 )
 
 all:
 	@echo Usage:
@@ -89,7 +91,7 @@ copy_temp_template:
 	chmod 0644 $(INSTANCE)/conf/tomcat-users.xml
  
 configure:
-	@echo configure
+	@echo configure instance.env ...
 	cd $(INSTANCE)/conf \
 	&& \
 	sed -e 's;HTTP_PORT=.*;HTTP_PORT=$(HTTP_PORT);'             \
@@ -97,6 +99,13 @@ configure:
 	    -e 's;JMX_PORT=.*;JMX_PORT=$(JMX_PORT);'                \
 	    -e 's;TOMCAT_USER=.*;TOMCAT_USER=$(TOMCAT_USER);'       \
 	    instance.env.in > instance.env
+
+	@echo set tomcat-users.xml credentials \(not echoed to screen\) ...
+	@cd $(INSTANCE)/conf \
+	&& \
+	sed -i -e 's;@MANAGERUSER@;$(MANAGER_USER);' \
+	       -e 's;@MANAGERPASSWD@;$(MANAGER_PASSWD);' \
+	    tomcat-users.xml
 
 fix_perms:
 	chmod 0644 $(INSTANCE)/conf/instance.env
