@@ -253,6 +253,8 @@ The `instance_manager` script assembles a full startup command, something like
     
 See the `instance_manager` script for the current specifics.
 
+In addition to VAR=value pairs, you can add other bash directives to influence the runtime environment of the tomcat instance. A common example is to set the `umask` so war files are expanded with desired permissions. For example, adding `umask 007` to `instance.env` or `global.env` will cause webapp files to have `0660/-rw-rw----` permissions.
+
 #### `global.env` and `instance.env` interactions
 
 Recall that `global.env` and `instance.env` are simply files with VAR=value pairs that are `source`d by the `instance_manager` BASH script. `global.env` is read first, followed by `instance.env`.  This allows variables defined in `global.env` to be overridden by `instance.env`. The value can be a predefined variable (`FOO=bar; VAR=$FOO`). The value can also be an escaped variable that is defined later (`VAR=\$FOO; FOO=bar;`) A precusor command line string is generated from the values and then that string is given a final parsing with `eval` to expand any embedded escaped variables (`eval VAR`). 
