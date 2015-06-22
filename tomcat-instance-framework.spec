@@ -52,6 +52,7 @@ cp instance_manager $RPM_BUILD_ROOT/usr/bin/instance_manager
 cp tomcat $RPM_BUILD_ROOT/etc/init.d/tomcat
 cp Changelog $RPM_BUILD_ROOT/usr/share/doc/%{pkg_name}
 cp ReadMe.md $RPM_BUILD_ROOT/usr/share/doc/%{pkg_name}
+cp misc/bash_tab_completion.sh $RPM_BUILD_ROOT/etc/profile.d/tcif_completion.sh
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -71,6 +72,7 @@ exit 0
 /usr/local/%{instance_dir}/templates
 /usr/local/%{instance_dir}/Makefile
 /usr/local/%{instance_dir}/shared/webapps
+/etc/profile.d/tcif_completion.sh
 
 %dir /usr/local/%{instance_dir}
 %dir /usr/local/%{instance_dir}/shared
