@@ -18,6 +18,7 @@ Packager: %{packager}
 
 Requires: jdk >= %{required_java_version}
 Requires: tomcat-%{required_tomcat_version}
+Requires: perl-XML-Simple
 Requires(pre): %{_sbindir}/useradd
 Requires(pre): %{_sbindir}/groupadd
 
