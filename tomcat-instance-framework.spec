@@ -46,6 +46,7 @@ rm -rf $RPM_BUILD_ROOT
 mkdir -p $RPM_BUILD_ROOT/usr/bin
 mkdir -p $RPM_BUILD_ROOT/usr/local
 mkdir -p $RPM_BUILD_ROOT/etc/init.d
+mkdir -p $RPM_BUILD_ROOT/etc/profile.d
 mkdir -p $RPM_BUILD_ROOT/usr/share/doc/%{pkg_name}
 cp -a %{instance_dir} $RPM_BUILD_ROOT/usr/local/
 cp instance_manager $RPM_BUILD_ROOT/usr/bin/instance_manager
