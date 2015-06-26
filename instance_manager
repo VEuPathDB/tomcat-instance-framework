@@ -1,6 +1,8 @@
 #!/bin/bash
 
 : ${TOMCAT_INSTANCES_DIR:=/usr/local/tomcat_instances}
+# force any relative path to canonical path
+TOMCAT_INSTANCES_DIR="$(readlink -e "$TOMCAT_INSTANCES_DIR")"
 
 #///////////////////////////////////////////////////////////////#
 #                                                               #
@@ -470,7 +472,9 @@ tstatus() {
     local OLDIFS="$IFS"
     local IFS="
 "
-    running_instances="$(ps -fd  | egrep '[j]svc.exe')"
+    # filter on tcif.root whose TOMCAT_INSTANCES_DIR matches value set by this script,
+    # to isolate instances managed by other TcIF installations.
+    running_instances="$(ps -fd  | egrep '[j]svc.exe' | grep "tcif.root=$TOMCAT_INSTANCES_DIR")"
 
     format="%-10.10s %6.6s %10.10s %6.6s %6.6s %6.6s %10s\n"
     
