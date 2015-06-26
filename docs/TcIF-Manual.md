@@ -407,6 +407,8 @@ The PID isfor the jsvc process owned by `TOMCAT_USER`. This process is the one s
     $ instance_manager status
     INSTANCE      PID       USER   HTTP  AJP13    JMX     UPTIME
     FooDB       31265   tomcat_1  19280  19209  19205       02m 39s
+    BarDB       42523   tomcat_3  19282  19211  19216       34m 52s
+    YooDB       54212   tomcat_2  19281  19210  19206       12m 12s
 
 Append `all` to include instances that are not running.
 
@@ -416,6 +418,12 @@ Append `all` to include instances that are not running.
     Not running:
     BarDB
 
+One or more instance names can be appended for a filtered report.
+
+    $ instance_manager status FooDB YooDB
+    INSTANCE      PID       USER   HTTP  AJP13    JMX     UPTIME
+    FooDB       31265   tomcat_1  19280  19209  19205       02m 39s
+    YooDB       54212   tomcat_2  19281  19210  19206       12m 12s
 
 ### Temporarily Disabling an Instance
 

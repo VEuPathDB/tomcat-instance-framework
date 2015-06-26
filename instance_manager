@@ -455,14 +455,20 @@ undeploy() {
     curl -s "$undeploy_url"
 }
 
+function join { local IFS="$1"; shift; echo "$*"; }
 
 tstatus() {
 
     local showall=0
 
+    report_on=()
     for arg in "$@"; do
       if [[ "$arg" == "all" ]]; then
         showall=1
+        unset report_on
+        break
+      else
+        report_on+=("\b${arg}\b")
       fi
     done
     
@@ -474,7 +480,18 @@ tstatus() {
 "
     # filter on tcif.root whose TOMCAT_INSTANCES_DIR matches value set by this script,
     # to isolate instances managed by other TcIF installations.
-    running_instances="$(ps -fd  | egrep '[j]svc.exe' | grep "tcif.root=$TOMCAT_INSTANCES_DIR")"
+    tcif_filter="grep 'tcif.root=$TOMCAT_INSTANCES_DIR'"
+
+    # filter on optional list of specific instances
+    if [[ ${#report_on[@] > 0} ]]; then
+      gstr=`join '|' ${report_on[@]}`
+      instance_filter="egrep '$gstr'"
+    else
+      # match everything
+      instance_filter='grep .'
+    fi
+
+    running_instances="$(ps -fd  | egrep '[j]svc.exe' | eval $tcif_filter | eval $instance_filter )"
 
     format="%-10.10s %6.6s %10.10s %6.6s %6.6s %6.6s %10s\n"
     
@@ -669,6 +686,7 @@ case "$1" in
     ;;
 
   stat*)
+    shift
     tstatus "$@"
     ;;
 
