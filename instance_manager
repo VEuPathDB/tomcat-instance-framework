@@ -493,14 +493,6 @@ tstatus() {
 
         # remove this running instance from the list
         offline_instances=`echo $offline_instances | sed "s/\s*${instance_name}\s*//g"`
-        
-        # verify ownership of non webapp files
-        cfg=${instance_name}/conf/instance.env
-        if [ -e $cfg ]; then
-            [[ $VERBOSE ]] && echo "source instance configuration: '$cfg'"
-            source $cfg
-            notowner=${notowner}`find $instance_name -not -user $TOMCAT_USER -not -path "$instance_name/webapps/*"`"\n"
-        fi        
 
     done
     
