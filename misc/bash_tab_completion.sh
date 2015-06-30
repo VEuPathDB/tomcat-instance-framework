@@ -14,7 +14,7 @@ _instance_manager() {
   
   local inst_list=$(find ${TOMCAT_INSTANCES_DIR} -mindepth 1     \
                     -maxdepth 1 -type d -regex '.+/[ABCDEFGHIJKLMNOPQRSTUVWXYZ].+' |   \
-                    xargs -n1 basename)
+                    xargs -r -n1 basename)
                     # -regex [A-Z] is not case sensitive for me. don't understand why :-(
   
 
@@ -47,7 +47,7 @@ _instance_manager() {
         manage)
           opts="$(find ${TOMCAT_INSTANCES_DIR}/$instance/conf/Catalina/localhost/ \
                   -type f -not -name 'Instance_Template' | \
-                  xargs -i -n1 basename '{}' .xml)"
+                  xargs -r -i -n1 basename '{}' .xml)"
           COMPREPLY=( $(compgen -W "$opts" -- "$cur") )
           ;;
         *)
@@ -58,7 +58,7 @@ _instance_manager() {
       ;;
 
     redeploy|undeploy|reload)
-      webapps="$(find ${TOMCAT_INSTANCES_DIR}/$instance/conf/Catalina/localhost/ -type f | xargs -i -n1 basename '{}' .xml)"
+      webapps="$(find ${TOMCAT_INSTANCES_DIR}/$instance/conf/Catalina/localhost/ -type f | xargs -r -i -n1 basename '{}' .xml)"
       COMPREPLY=( $(compgen -W "$webapps" -- "$cur") )
       return 0
       ;;
