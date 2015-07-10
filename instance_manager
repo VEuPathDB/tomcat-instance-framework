@@ -104,7 +104,7 @@ get_known_instances() {
         known_instances[${#known_instances[@]}]="$dir"
     done
     if [[ ${#known_instances[@]} -eq 0 ]];then
-      echo "<none found>"
+      : #echo "<none found>"
     else
       echo "${known_instances[@]}"
     fi
