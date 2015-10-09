@@ -21,8 +21,6 @@ unset $(/usr/bin/env | \
 export TERM=vt100 # for help piped through less
 export PATH=/bin:/usr/bin:/usr/local/bin
 
-INSTANCE=$2
-
 pushd $TOMCAT_INSTANCES_DIR &> /dev/null
 
 core_usage() {
@@ -30,7 +28,7 @@ core_usage() {
     echo
     echo "Manage Tomcat instances and webapps."
     echo
-    echo "Usage: sudo $this <start|stop|restart> <instance> [force]"
+    echo "Usage: sudo $this <start|stop|restart> <instance|all> [force]"
     echo "       $this manage <instance> list"
     echo "       $this manage <instance> <start|stop|reload|undeploy|redeploy> <webapp>"
     echo "       $this manage <instance> deploy </path/to/context.xml>"
@@ -57,10 +55,12 @@ expanded_usage() {
       echo "Each instance can be stopped, started and restarted independently of the"
       echo "others. In uncommon cases where the instance will not stop properly, you"
       echo "can 'stop' with  the 'force' option to kill the JVM. The 'start', 'stop'"
-      echo "and 'restart' actions of the Tomcat instance affects all contained webapps."
-      echo "Therefore these actions require sudo permissions. Example:"
+      echo "and 'restart' actions of the Tomcat instance affects all contained webapps,"
+      echo "therefore these actions require sudo permissions. Example:"
       echo "  sudo $this restart ApiDB"
-      echo 
+      echo "Using 'all' in place of an instance name can be used to start or stop all"
+      echo "the known instances (those whose name does not have a '_' prefix)."
+      echo
       echo "The 'manage' verb allows you to act within a given instance. The manage actions"
       echo "do not require sudo permissions. The 'list' action will print the webapps"
       echo "deployed in the instance and and their running state. Example:"
@@ -664,6 +664,19 @@ EOF
     esac
 }
 
+INSTANCE=$2
+# Special case when starting/stoping instance 'all'. Iteratively
+# invoke this script for each active instance found.
+if [[
+  "$INSTANCE" == "all" && 
+  ("$1" == "stop" || "$1" == "start" || "$1" == "restart") 
+]]; then
+  require_sudo
+  for instance in `$0 list`; do
+    $0 $1 $instance $3
+  done
+  exit 0
+fi
 
 case "$1" in
   start)
