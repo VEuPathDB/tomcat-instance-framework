@@ -45,15 +45,21 @@ sed -i 's;^ORACLE_HOME=.*;ORACLE_HOME=/u01/app/oracle/product/%{required_oracle_
 rm -rf $RPM_BUILD_ROOT
 mkdir -p $RPM_BUILD_ROOT/usr/bin
 mkdir -p $RPM_BUILD_ROOT/usr/local
-mkdir -p $RPM_BUILD_ROOT/etc/init.d
 mkdir -p $RPM_BUILD_ROOT/etc/profile.d
 mkdir -p $RPM_BUILD_ROOT/usr/share/doc/%{pkg_name}
 cp -a %{instance_dir} $RPM_BUILD_ROOT/usr/local/
 cp instance_manager $RPM_BUILD_ROOT/usr/bin/instance_manager
-cp tomcat $RPM_BUILD_ROOT/etc/init.d/tomcat
 cp Changelog $RPM_BUILD_ROOT/usr/share/doc/%{pkg_name}
 cp ReadMe.md $RPM_BUILD_ROOT/usr/share/doc/%{pkg_name}
 cp misc/bash_tab_completion.sh $RPM_BUILD_ROOT/etc/profile.d/tcif_completion.sh
+
+%if 0%{?rhel} >=7
+mkdir -p $RPM_BUILD_ROOT/usr/lib/systemd/system
+cp tomcat.service $RPM_BUILD_ROOT/usr/lib/systemd/system/tomcat.service
+%else
+mkdir -p $RPM_BUILD_ROOT/etc/init.d
+cp tomcat $RPM_BUILD_ROOT/etc/init.d/tomcat
+%endif
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -69,7 +75,13 @@ exit 0
 %files
 %defattr(-, tomcat, tomcat)
 %attr(755, root, root) /usr/bin/instance_manager
-%attr(754, root, root) /etc/init.d/tomcat
+
+%if 0%{?rhel} >=7
+%attr(0644, root, root) /usr/lib/systemd/system/tomcat.service
+%else
+%attr(0754, root, root) /etc/init.d/tomcat
+%endif
+
 /usr/local/%{instance_dir}/templates
 /usr/local/%{instance_dir}/Makefile
 /usr/local/%{instance_dir}/shared/webapps

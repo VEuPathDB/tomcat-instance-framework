@@ -1,0 +1,12 @@
+[Unit]
+Description=Tomcat Instance Framework
+
+[Service]
+Type=forking
+TimeoutSec=0
+ExecStart=/usr/bin/instance_manager start all
+ExecReload=/usr/bin/instance_manager reload all
+ExecStop=/usr/bin/instance_manager stop all
+
+[Install]
+WantedBy=multi-user.target
