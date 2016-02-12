@@ -429,8 +429,6 @@ disable() {
   init_for_managment "$@"
   stop force
 
-  echo "Stopping ${INSTANCE}"
-  stop force
   echo "Renaming ${INSTANCE} directory to _${INSTANCE}"
   cd "${TOMCAT_INSTANCES_DIR}"
   mv "${INSTANCE}" "_${INSTANCE}"
@@ -445,7 +443,6 @@ enable() {
   else
     echo "Renaming _${INSTANCE} directory to ${INSTANCE}"
     mv "_${INSTANCE}" "${INSTANCE}"
-    echo "Starting ${INSTANCE}"
   fi
   
   init_for_managment "$@"
