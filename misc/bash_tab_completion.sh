@@ -45,7 +45,23 @@ _instance_manager() {
       return 0
       ;;
 
-    start|stop|restart|disable)
+    start|stop|restart)
+      local opts
+      case "$action" in 
+        manage)
+          opts="$(find ${TOMCAT_INSTANCES_DIR}/$instance/conf/Catalina/localhost/ \
+                  -type f -not -name 'Instance_Template' | \
+                  xargs -r -i -n1 basename '{}' .xml)"
+          COMPREPLY=( $(compgen -W "$opts" -- "$cur") )
+          ;;
+        *)
+          COMPREPLY=( $(compgen -W "$inst_list" -- "$cur") )
+          ;;
+      esac
+        return 0
+      ;;
+
+    disable)
       COMPREPLY=( $(compgen -W "$inst_list" -- "$cur") )
       ;;
 
