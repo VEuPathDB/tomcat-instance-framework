@@ -14,7 +14,7 @@ Features include
 
 - Each Tomcat instance is run in its own jvm process with its own configuration options. For example instance `A` may be Java 6 + Tomcat 6 with a 1024MB memory heap, whereas instance `B` can be configured to use Java 7 + Tomcat 7 with a 512MB memory heap.  Each instance can host multiple webapps.
 - Each Tomcat instance is named for easy identifcation and management.
-- Management script permits non-root users to manage webapp deployments and permits `sudo` users to start/stop instances.
+- Management script permits non-root users to manage webapp deployments and permits `sudo` users to start/stop, enable/disable instances.
 
 ### Security Warning
 
@@ -427,14 +427,15 @@ One or more instance names can be appended for a filtered report.
 
 ### Temporarily Disabling an Instance
 
-If you have an instance configured but want to temporarily exclude it from the `instance_manager` script you can stop it and rename the instance directory in `/usr/local/tomcat_instances` with a leading underscore. For example,
+If you have an instance configured but want to temporarily exclude it from the `instance_manager` script and the system init (SysVinit or systemd) you can use the `disable` command. This requires the use of `sudo`.
 
-    sudo instance_manager stop FooDB
-    mv /usr/local/tomcat_instances/FooDB /usr/local/tomcat_instances/_FooDB
+    $ sudo instance_manager disable FooDB
 
-`FooDB` will now be excluded from `instance_manager` reports and actions. The `tomcat` service script will also not start the instance.
+This will stop the instance and rename the instance directory in `/usr/local/tomcat_instances` with a leading underscore. `FooDB` will now be excluded from `instance_manager` reports and actions. The `tomcat` init script will also not start the instance. The contained configurations and logs will be left intact, available for future use.
 
-Remove the underscore from the directory name to put the instance back in service.
+To make the instance available for use again, `enable` it.
+
+    $ sudo instance_manager enable FooDB
 
 ### Troubleshooting Tips
 

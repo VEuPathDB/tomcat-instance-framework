@@ -1,5 +1,7 @@
 #!/bin/bash
 
+THIS=`basename $0`
+
 : ${TOMCAT_INSTANCES_DIR:=/usr/local/tomcat_instances}
 # force any relative path to canonical path
 TOMCAT_INSTANCES_DIR="$(readlink -e "$TOMCAT_INSTANCES_DIR")"
@@ -24,21 +26,21 @@ export PATH=/bin:/usr/bin:/usr/local/bin
 pushd $TOMCAT_INSTANCES_DIR &> /dev/null
 
 core_usage() {
-    this=`basename $0`
     echo
     echo "Manage Tomcat instances and webapps."
     echo
-    echo "Usage: sudo $this <start|stop|restart> <instance|all> [force]"
-    echo "       $this manage <instance> list"
-    echo "       $this manage <instance> <start|stop|reload|undeploy|redeploy> <webapp>"
-    echo "       $this manage <instance> deploy </path/to/context.xml>"
-    echo "       $this status [all]"
+    echo "Usage: sudo $THIS <start|stop|restart> <instance|all> [force]"
+    echo "       sudo $THIS <enable|disable> <instance>"
+    echo "       $THIS manage <instance> list"
+    echo "       $THIS manage <instance> <start|stop|reload|undeploy|redeploy> <webapp>"
+    echo "       $THIS manage <instance> deploy </path/to/context.xml>"
+    echo "       $THIS status [all]"
     echo
 }
 
 usage() {
     core_usage
-    echo "Use '$this help' for expanded information."
+    echo "Use '$THIS help' for expanded information."
     echo
     exit 1
 }
@@ -57,18 +59,18 @@ expanded_usage() {
       echo "can 'stop' with  the 'force' option to kill the JVM. The 'start', 'stop'"
       echo "and 'restart' actions of the Tomcat instance affects all contained webapps,"
       echo "therefore these actions require sudo permissions. Example:"
-      echo "  sudo $this restart ApiDB"
+      echo "  sudo $THIS restart ApiDB"
       echo "Using 'all' in place of an instance name can be used to start or stop all"
       echo "the known instances (those whose name does not have a '_' prefix)."
       echo
       echo "The 'manage' verb allows you to act within a given instance. The manage actions"
       echo "do not require sudo permissions. The 'list' action will print the webapps"
       echo "deployed in the instance and and their running state. Example:"
-      echo "  $this manage ApiDB list"
+      echo "  $THIS manage ApiDB list"
       echo
       echo "A given <webapp> can be started, stopped, reloaded, undeployed or redeployed"
       echo "from the instance being managed. Example:"
-      echo "  $this manage ApiDB reload apidb.dev"
+      echo "  $THIS manage ApiDB reload apidb.dev"
       echo
       echo "A 'redeploy' action first undeploys the existing context xml file from the"
       echo "instance and then deploys that same xml file back in. The primary use case"
@@ -78,18 +80,23 @@ expanded_usage() {
       echo
       echo "A webapp can be added to the instance via the 'deploy' command. A webapp"
       echo "may not be running after deployment, so monitor the Tomcat logs during"
-      echo "deployment or use the $this 'list' command to check the webapp's"
+      echo "deployment or use the $THIS 'list' command to check the webapp's"
       echo "state after deploying. Example:"
-      echo "  $this manage ApiDB deploy \$PROJECT_HOME/../etc/apidb.dev.xml"
+      echo "  $THIS manage ApiDB deploy \$PROJECT_HOME/../etc/apidb.dev.xml"
       echo
       echo "The 'status' verb prints the currently running Tomcat instances along with"
       echo "their process id, process owner, ports and instance uptime. Append 'all'"
       echo "to include instances that are not running."
       echo
+      echo "The 'disable' action stops the instance and temporarily excludes it from "
+      echo "the $THIS script and the system init protocols. 'enable' will"
+      echo "make the instance useable again and start it. These actions require"
+      echo "sudo permissions."
+      echo
       echo "See http://s.eupathdb.org/1gjo853 for full documentation."
       echo
       echo "-------"
-      echo "$this is a product of EuPathDB Bioinformatics Resource Center <help@eupathdb.org>"
+      echo "$THIS is a product of EuPathDB Bioinformatics Resource Center <help@eupathdb.org>"
     ) | less
     exit $PIPESTATUS 
 }
@@ -143,7 +150,7 @@ set_manager_credentials() {
 
 require_sudo() {
     if [[ "$TOMCAT_USER" != "$USER" && `id -u` != 0 ]]; then 
-        echo 'sudo/root permissions required to start or stop.'; exit 4;
+        echo 'sudo/root permissions required for this action.'; exit 4;
     fi
 }
 
@@ -177,11 +184,23 @@ manager_path_for_version() {
 }
 
 
-# initialize for management tasks (start, stop, list)
+# initialize for management tasks (start, stop, enable, disable, list)
 init_for_managment() {
+
     [ "$INSTANCE" == "" ] && usage;
-    [ ! -d "$INSTANCE" ] && echo "Instance '$INSTANCE' not found." && exit 1;
-    
+
+    if [ -d "${INSTANCE}" ]; then
+      local state=enabled
+    elif [ -d "_${INSTANCE}" ]; then
+      echo "${INSTANCE} is disabled."
+      if [ $1 == "start" ]; then
+        echo "Enable and start with '${THIS} enable ${INSTANCE}'."
+      fi
+      exit 0
+    else
+      echo "Instance '$INSTANCE' not found." && exit 1;
+    fi
+
     for arg in "$@"; do
       if [[ "$arg" == "verbose" ]]; then
         VERBOSE=1
@@ -398,6 +417,40 @@ stop() {
 
 }
 
+disable() {
+  require_sudo
+
+  cd "${TOMCAT_INSTANCES_DIR}"
+  if [[ -d "_${INSTANCE}" ]]; then
+    echo "${INSTANCE} is already disabled."
+    exit 0
+  fi
+
+  init_for_managment "$@"
+  stop force
+
+  echo "Stopping ${INSTANCE}"
+  stop force
+  echo "Renaming ${INSTANCE} directory to _${INSTANCE}"
+  cd "${TOMCAT_INSTANCES_DIR}"
+  mv "${INSTANCE}" "_${INSTANCE}"
+
+}
+
+enable() {
+  require_sudo
+  cd "${TOMCAT_INSTANCES_DIR}"
+  if [[ -d "${INSTANCE}" ]]; then
+    echo "${INSTANCE} is already enabled."
+  else
+    echo "Renaming _${INSTANCE} directory to ${INSTANCE}"
+    mv "_${INSTANCE}" "${INSTANCE}"
+    echo "Starting ${INSTANCE}"
+  fi
+  
+  init_for_managment "$@"
+  start "${@:3}"
+}
 
 deployFile() {
    cd ~-0 # cd back to user's cwd so a relative path to context.xml file is sensical
@@ -652,9 +705,8 @@ manage() {
             deployFile $HTTP_PORT $context
             ;;
            *)
-            this=`basename $0`
             cat <<EOF
-Usage: $this manage $instance COMMAND
+Usage: $THIS manage $instance COMMAND
 Command Options:
         list
         stop <webapp>
@@ -692,6 +744,16 @@ case "$1" in
   stop)
     init_for_managment "$@"
     stop "${@:3}"
+    exit $?
+    ;;
+
+  enable)
+    enable "$@"
+    exit $?
+    ;;
+
+  disable)
+    disable "$@"
     exit $?
     ;;
 
