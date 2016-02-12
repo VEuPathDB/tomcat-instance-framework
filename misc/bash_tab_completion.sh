@@ -3,7 +3,7 @@
 _instance_manager() {
   COMPREPLY=()
 
-  local verbs="manage start stop restart status"
+  local verbs="manage start stop restart status enable disable"
   local man_tasks="start stop reload redeploy undeploy list deploy"
   
   local cur="${COMP_WORDS[COMP_CWORD]}"
@@ -16,6 +16,10 @@ _instance_manager() {
                     -maxdepth 1 -type d -regex '.+/[ABCDEFGHIJKLMNOPQRSTUVWXYZ].+' |   \
                     xargs -r -n1 basename)
                     # -regex [A-Z] is not case sensitive for me. don't understand why :-(
+
+  local disabled_list=$(find ${TOMCAT_INSTANCES_DIR} -mindepth 1     \
+                        -maxdepth 1 -type d -regex '.+/_[ABCDEFGHIJKLMNOPQRSTUVWXYZ].+' |   \
+                        xargs -r -n1 basename | sed  's/^_//')
   
 
   case "$prev" in
@@ -41,20 +45,12 @@ _instance_manager() {
       return 0
       ;;
 
-    start|stop|restart)
-      local opts
-      case "$action" in 
-        manage)
-          opts="$(find ${TOMCAT_INSTANCES_DIR}/$instance/conf/Catalina/localhost/ \
-                  -type f -not -name 'Instance_Template' | \
-                  xargs -r -i -n1 basename '{}' .xml)"
-          COMPREPLY=( $(compgen -W "$opts" -- "$cur") )
-          ;;
-        *)
-          COMPREPLY=( $(compgen -W "$inst_list" -- "$cur") )
-          ;;
-      esac
-        return 0
+    start|stop|restart|disable)
+      COMPREPLY=( $(compgen -W "$inst_list" -- "$cur") )
+      ;;
+
+    enable)
+      COMPREPLY=( $(compgen -W "$disabled_list" -- "$cur") )
       ;;
 
     redeploy|undeploy|reload)
@@ -80,4 +76,3 @@ _instance_manager() {
 # use default for clean filename completion, filename completion
 # with 'compgen -f' looks like ass
 complete -F "_instance_manager" -o default "instance_manager"
-
