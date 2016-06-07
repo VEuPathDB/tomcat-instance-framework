@@ -314,6 +314,7 @@ Changes to `web.xml` are optional. If the default values in `$CATALINA_HOME/conf
 
 You'll need a copy of `instance.env.in` in your custom template. Copy it from one of the bundled templates. You will need to override `CATALINA_HOME` in `instance.env.in` if it different from the definition in the framework's `global.env`. `instance.env.in` is copied and edited to `instance.env` by the make process when you create a new instance. 
 
+**Patch instance_manager**: If adding a template for a major version, you will need to add an entry for the version to the `manager_path_for_version()` function in `/usr/bin/instance_manager`, if it does not already exist. The entry informs `instance_manager` how to call the manager URL (e.g. for the URL `http://{host}:{port}/manager/text/{command}?{parameters}` the function should have an entry for `manager/text`).
 
 ### Managing Instances
 
