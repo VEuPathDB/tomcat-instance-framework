@@ -292,6 +292,14 @@ init_for_managment() {
       done
     fi
 
+    # Tomcat 9 fails with
+    # SEVERE: Unable to process file [/proc/self/task/15224...
+    # when there empty slots in classpath (e.g. :a:b::c),
+    # so ensure a valid path.
+    CLASSPATH=$(sed 's/^://'    <<< "$CLASSPATH")
+    CLASSPATH=$(sed 's/::*/:/g' <<< "$CLASSPATH")
+    CLASSPATH=$(sed 's/:$//'    <<< "$CLASSPATH")
+
 } # init_for_managment()
 
 
