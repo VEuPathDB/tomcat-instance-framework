@@ -98,16 +98,16 @@ expanded_usage() {
       echo "-------"
       echo "$THIS is a product of EuPathDB Bioinformatics Resource Center <help@eupathdb.org>"
     ) | less
-    exit $PIPESTATUS 
+    exit $PIPESTATUS
 }
 
 get_known_instances() {
-    # an instance is a directory under /usr/local/tomcat_instances with a conf/instance.env file 
+    # an instance is a directory under /usr/local/tomcat_instances with a conf/instance.env file
     # and whose name does not have a '_' prefix
     possible_instances=`find $TOMCAT_INSTANCES_DIR -mindepth 1 -maxdepth 1 -type d -not -name Instance_Template -not -name shared -not -name common -not -name '.*' -not -name '_*' -printf '%f '`
     declare -a known_instances
     for dir in $possible_instances; do
-      [[ -f "$TOMCAT_INSTANCES_DIR/$dir/conf/instance.env" ]] && 
+      [[ -f "$TOMCAT_INSTANCES_DIR/$dir/conf/instance.env" ]] &&
         known_instances[${#known_instances[@]}]="$dir"
     done
     if [[ ${#known_instances[@]} -eq 0 ]];then
@@ -123,25 +123,25 @@ get_known_instances() {
 set_manager_credentials() {
     local instance=$1
     userxml="${TOMCAT_INSTANCES_DIR}/${instance}/conf/tomcat-users.xml"
-    test -e $userxml || { 
+    test -e $userxml || {
        echo
        echo "'$userxml' not found."
        echo "Can not get tomcat login credentials."
        echo
        exit 1
     }
- 
+
     cred=($(
        perl -MXML::Simple -e \
        "\$x=XMLin(
-            '$userxml', 
-            NormalizeSpace=>2, 
-            KeyAttr=>['roles','username'], 
+            '$userxml',
+            NormalizeSpace=>2,
+            KeyAttr=>['roles','username'],
             ForceArray=>1);
-            \$c = \$x->{'user'}->{'manager'} || \$x->{'user'}->{'manager-script'}; 
+            \$c = \$x->{'user'}->{'manager'} || \$x->{'user'}->{'manager-script'};
             print \"\$c->{'username'} \$c->{'password'}\";"
         ))
-        
+
     TC_USER=${cred[0]}
     TC_PASS=${cred[1]}
 
@@ -149,7 +149,7 @@ set_manager_credentials() {
 
 
 require_sudo() {
-    if [[ "$TOMCAT_USER" != "$USER" && `id -u` != 0 ]]; then 
+    if [[ "$TOMCAT_USER" != "$USER" && `id -u` != 0 ]]; then
         echo 'sudo/root permissions required for this action.'; exit 4;
     fi
 }
@@ -181,7 +181,7 @@ manager_path_for_version() {
       echo 'manager/text'
       ;;
       *)
-      echo  1>&2 "unable to determine the manager's URL path for Tomcat version '${tomcat_version}'" 
+      echo  1>&2 "unable to determine the manager's URL path for Tomcat version '${tomcat_version}'"
       ;;
   esac
 }
@@ -209,38 +209,38 @@ init_for_managment() {
         VERBOSE=1
       fi
     done
-    
-    # an associative array of extra options that can be defined in 
+
+    # an associative array of extra options that can be defined in
     # global.env or instance.env
     declare -A CATALINA_OPTS
-    
+
     global_cfg=$TOMCAT_INSTANCES_DIR/shared/conf/global.env
     if [ ! -e $global_cfg ]; then
-        echo "$global_cfg not found"; 
+        echo "$global_cfg not found";
         exit 1;
     fi
     [[ $VERBOSE ]] && echo "source global configuration: '$global_cfg'"
     source $global_cfg
-    
+
     export ORACLE_HOME LD_LIBRARY_PATH
-    
+
     # Instance specific configuration
     cfg=${INSTANCE}/conf/instance.env
     if [ ! -e $cfg ]; then
-        echo "$cfg not found"; 
+        echo "$cfg not found";
         exit 1;
     fi
     [[ $VERBOSE ]] && echo "source instance configuration: '$cfg'"
     source $cfg
 
     PATH="$JAVA_HOME/bin:$PATH"
-    
+
     # Backward compatibility:
     # convert any old SHUTDOWN_PORT configurations to JMX_PORT.
-    # We launch via jsvc which does not use a shutdown port so 
+    # We launch via jsvc which does not use a shutdown port so
     # this is OK.
     JMX_PORT=${JMX_PORT:-$SHUTDOWN_PORT}
-    
+
     # check that we have required values
     required_cfg=( HTTP_PORT )
     for opt in ${required_cfg[@]}; do
@@ -262,7 +262,7 @@ init_for_managment() {
     TOMCAT_VERSION=`tomcat_version`
     MANAGER_PATH=`manager_path_for_version $TOMCAT_VERSION`
     [[ -n "$MANAGER_PATH" ]] || exit 1
-    
+
     #  properties required for proper function tomcat_instance framework and its support scripts.
     : ${FRAMEWORK_PROPERTIES:="           \
         -Dhttp.port=$HTTP_PORT            \
@@ -271,8 +271,8 @@ init_for_managment() {
         -Dinstance.name=$INSTANCE         \
         -Dtcif.root=$TOMCAT_INSTANCES_DIR \
     "}
-    
-    
+
+
     # 'eval echo' expands any embedded variables
     for val in "${CATALINA_OPTS[*]}"; do
       CATALINA_OPTS_E="${CATALINA_OPTS_E} $(eval echo $val)"
@@ -306,11 +306,11 @@ init_for_managment() {
 # output parent and child processes
 get_pids() {
   # processes owned by $TOMCAT_USER
-  # jsvc starts parent (session leader) and child processes, 
+  # jsvc starts parent (session leader) and child processes,
   # For system installs, the session leader is owned by root and
-  # the child is owned by TOMCAT_USER, but when running in 
+  # the child is owned by TOMCAT_USER, but when running in
   # standalone mode both processes are owned by TOMCAT_USER
-  # so we can't rely solely on 'ps -u' and need to filter out 
+  # so we can't rely solely on 'ps -u' and need to filter out
   # the session leader (STAT == 'Ss').
     pids=$(ps -u $TOMCAT_USER  --format stat,pid,ppid,cmd  | \
               egrep -v '^Ss  '  | \
@@ -324,7 +324,7 @@ get_pids() {
 
 start() {
     require_sudo
-    
+
     pids=$(get_pids)
     if [[ -n "$pids" ]]; then
         # trim off start time for parent
@@ -366,9 +366,9 @@ start() {
     [[ $VERBOSE ]] && echo -e "CATALINA_OPTS\n${CATALINA_OPTS_E}\n"
     [[ $VERBOSE ]] && echo -e "CLASSPATH\n${CLASSPATH}\n"
     [[ $VERBOSE ]] && echo -e "complete startup command\n${STARTUP_EXEC}\n"
-    
+
     eval $STARTUP_EXEC
-        
+
     #
     # To get a verbose JVM
     #-verbose \
@@ -376,7 +376,7 @@ start() {
     #-debug
 
     exit_status=$?
-    
+
     # jsvc returns 1 even when successfully starting. So we resort
     # to other methods of checking and returning a proper status.
     if [[ -f $PID_FILE ]]; then
@@ -386,7 +386,7 @@ start() {
         ps $pid 2>&1>/dev/null
         return $?
     fi
-    
+
     return $exit_status
 }
 
@@ -407,9 +407,9 @@ stop() {
           return
       fi
     done
-    
+
     echo -n stopping $INSTANCE...
-    
+
     STOP_EXEC="$JSVC_EXE \
     -stop \
     -pidfile $PID_FILE \
@@ -455,7 +455,7 @@ enable() {
     echo "Renaming _${INSTANCE} directory to ${INSTANCE}"
     mv "_${INSTANCE}" "${INSTANCE}"
   fi
-  
+
   init_for_managment "$@"
   start "${@:3}"
 }
@@ -491,10 +491,10 @@ deployFile() {
 deployVirtual() {
     local HTTP_PORT=$1
     local context_xml_data="$2"
-    local tmp_ctx_file=$(mktemp -tu instance_manager.XXXXXXXXXX) || { 
+    local tmp_ctx_file=$(mktemp -tu instance_manager.XXXXXXXXXX) || {
         echo "could not create temp context file '$tmp_ctx_file'"; exit 1;
     }
-    echo "$context_xml_data" > $tmp_ctx_file 
+    echo "$context_xml_data" > $tmp_ctx_file
     local context=$(perl -MXML::Simple -e "print XMLin('$tmp_ctx_file', NormalizeSpace=>2)->{path};")
     set_manager_credentials $INSTANCE
     local deploy_url="http://$TC_USER:$TC_PASS@127.0.0.1:$HTTP_PORT/${MANAGER_PATH}/deploy?config=file:$tmp_ctx_file&war&path=$context"
@@ -532,7 +532,7 @@ tstatus() {
         report_on+=("\b${arg}\b")
       fi
     done
-    
+
     # list of all instances found on filesystem. We will remove running instances from the list.
     offline_instances=`get_known_instances`
 
@@ -555,7 +555,7 @@ tstatus() {
     running_instances=($(ps -fd  | egrep '[j]svc.exe' | eval $tcif_filter | eval $instance_filter ))
 
     format="%-10.10s %6.6s %10.10s %6.6s %6.6s %6.6s %10s\n"
-    
+
     printf $format INSTANCE PID USER HTTP AJP13 JMX UPTIME
     for inst in ${running_instances[@]}; do
 
@@ -570,17 +570,17 @@ tstatus() {
         # skip any jsvc processes that don't have a corresponding directory that we manage,
         # assuming that someone must have started it manually.
         [[ ! -d "${TOMCAT_INSTANCES_DIR}/${instance_name}" ]] && continue
-        
+
         printf "$format" "$instance_name" "$pid" "$user" "$http" "$ajp13" "$jmx" "$uptime"
 
         # remove this running instance from the list
         offline_instances=`echo $offline_instances | sed "s/\s*${instance_name}\s*//g"`
 
     done
-    
+
     local IFS="$OLDIFS"
 
-    if [[ $showall -eq 1 ]]; then 
+    if [[ $showall -eq 1 ]]; then
       if [[ ${#offline_instances} -gt 0 ]]; then
         echo "Not running:"
         for offline in $offline_instances; do echo $offline; done
@@ -613,7 +613,7 @@ start_app() {
     fi
 
     local tomcat_ctx=$([ "$webapp" == "ROOT" ] && echo "/" || echo "/$webapp")
-    
+
     if [ "`wstatus $webapp`" == "running" ]; then
       echo
       echo "$webapp is already running."
@@ -640,12 +640,12 @@ manage() {
 
     local cfg=${instance}/conf/instance.env
     if [ ! -e $cfg ]; then
-        echo "$cfg not found"; 
+        echo "$cfg not found";
         exit 1;
     fi
     [[ $VERBOSE ]] && echo "source instance configuration: '$cfg'"
     source $cfg
-    
+
     set_manager_credentials $instance
 
     case "$cmd" in
@@ -671,7 +671,7 @@ manage() {
               echo "no webapp given"
               echo
               usage
-            fi           
+            fi
             start_app $webapp
             ;;
         reload)
@@ -680,7 +680,7 @@ manage() {
               echo "no webapp given"
               echo
               usage
-            fi           
+            fi
             if [ "`wstatus $webapp`" == "stopped" ]; then
                 echo
                 echo "$webapp is stopped. I will attempt to start it. Wish me luck."
@@ -698,7 +698,7 @@ manage() {
               echo "no webapp given"
               echo
               usage
-            fi           
+            fi
             undeploy $webapp
             ;;
         redeploy)
@@ -732,8 +732,8 @@ INSTANCE=$2
 # Special case when starting/stoping instance 'all'. Iteratively
 # invoke this script for each active instance found.
 if [[
-  "$INSTANCE" == "all" && 
-  ("$1" == "stop" || "$1" == "start" || "$1" == "restart") 
+  "$INSTANCE" == "all" &&
+  ("$1" == "stop" || "$1" == "start" || "$1" == "restart")
 ]]; then
   require_sudo
   for instance in `$0 list`; do
