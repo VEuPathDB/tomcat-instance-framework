@@ -111,13 +111,13 @@ Before you can launch a Tomcat process using the framework you must create an in
 An instance is created by copying a template and editing an instance.env file. A Makefile is available to execute the necessary steps. It requires root privileges. `cd` to the `tomcat_instances` directory and run `make` with defined variables (run `make` alone to see list of required and optional variables). For example,
 
     $ cd /usr/local/tomcat_instances
-    $ make install                                  \
-      INSTANCE=FooDB                                \
-      HTTP_PORT=19280                               \
-      AJP13_PORT=19209                              \
-      JMX_PORT=19205                                \
-      TOMCAT_USER=tomcat_Z                          \
-      OJDBC_PATH=$ORACLE_HOME/jdbc/lib/ojdbc6.jar   \
+    $ make install                                      \
+      INSTANCE=FooDB                                    \
+      HTTP_PORT=19280                                   \
+      AJP13_PORT=19209                                  \
+      JMX_PORT=19205                                    \
+      TOMCAT_USER=tomcat_Z                              \
+      ORCL_JDBC_PATH=$ORACLE_HOME/jdbc/lib/ojdbc6.jar   \
       TEMPLATE=7.0.23
 
 The `make` variables are:
@@ -133,7 +133,7 @@ The `make` variables are:
 
 `TOMCAT_USER` - the user that will own the Tomcat process. This framework uses `jsvc` to control the java processes. `jsvc` is a daemon process that is started as root and then downgraded to this  unprivilegded `TOMCAT_USER`. It is recommended that each instance have a unique user dedicated to it so Java subprocesses spawned from the instance can be more easily identified in output from the `ps` command.
 
-`OJDBC_PATH` - (optional) The path to the desired ojdbc jar file for Oracle.
+`ORCL_JDBC_PATH` - (optional) The path to the desired ojdbc jar file for Oracle.
 
 `PG_JDBC_PATH` - (optional) The path to the desired ojdbc jar file for PostgreSQL.
 
