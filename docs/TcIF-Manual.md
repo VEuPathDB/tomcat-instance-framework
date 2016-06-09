@@ -306,7 +306,7 @@ in `tomcat-users.xml`, add a role for the Manager. The username and password can
       <user username="839da325" password="71bd242d57ba" roles="manager-script"/>
     </tomcat-users>
     
-You can have more than one user but at least one user must have one and only one role of manager or manager-script, otherwise the simple XML parser in `instance_manager` will fail.
+You can have more than one user but at least one user must have one and only one role of manager (Tomcat 6) or manager-script (Tomcat 7, 8, 9), otherwise the simple XML parser in `instance_manager` will fail.
 
 Changes to `web.xml` are optional. If the default values in `$CATALINA_HOME/config/web.xml` are fine for you then you don't need to include a copy in the template. We typically change the `session-timeout` so the templates bundled with the tomcat-instance-framework reflect this.
 
