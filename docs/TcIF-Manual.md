@@ -310,9 +310,11 @@ You can have more than one user but at least one user must have one and only one
 
 Changes to `web.xml` are optional. If the default values in `$CATALINA_HOME/config/web.xml` are fine for you then you don't need to include a copy in the template. We typically change the `session-timeout` so the templates bundled with the tomcat-instance-framework reflect this.
 
-`conf/Catalina` directory tree copied from one of the other templates. This tree includes context descriptors for ROOT and manager webapps. The manager.xml defines the Manager app and is required for `instance_manager` function. The ROOT.xml defines what is served when the root, `'/'`, path is requested. When using the bundled ROOT.xml, the root context serves a JSP that summarizes information about the Tomcat server. The ROOT.xml is optional and can be redefined to reference a different webapp.
+`conf/Catalina` directory tree copied from one of the other templates. This tree includes context descriptors for ROOT and manager webapps. The manager.xml defines the Manager app and is required for `instance_manager` function. The ROOT.xml defines what is served when the root, `'/'`, path is requested. When using the bundled ROOT.xml, the root context serves a JSP that summarizes information about the Tomcat server. The ROOT.xml is optional and can be redefined to reference a different webapp. The syntax of these files may need to be adjusted for compatibility with new releases of Tomcat.
 
-You'll need a copy of `instance.env.in` in your custom template. Copy it from one of the bundled templates. You will need to override `CATALINA_HOME` in `instance.env.in` if it different from the definition in the framework's `global.env`. `instance.env.in` is copied and edited to `instance.env` by the make process when you create a new instance. 
+Also add empty directories `logs`, `shared/lib` and `webapps` to your template.
+
+You'll need a copy of `instance.env.in` in your custom template. Copy it from one of the bundled templates. You will need to override `CATALINA_HOME` in `instance.env.in` if it different from the definition in the framework's `global.env`. Overriding `JAVA_HOME` may also be desired. `instance.env.in` is copied and edited to `instance.env` by the make process when you create a new instance. 
 
 **Patch instance_manager**: If adding a template for a major version, you will need to add an entry for the version to the `manager_path_for_version()` function in `/usr/bin/instance_manager`, if it does not already exist. The entry informs `instance_manager` how to call the manager URL (e.g. for the URL `http://{host}:{port}/manager/text/{command}?{parameters}` the function should have an entry for `manager/text`).
 
