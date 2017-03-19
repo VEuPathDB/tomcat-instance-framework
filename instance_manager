@@ -587,7 +587,15 @@ tstatus() {
       fi
     fi
 
-    exit 0
+    # Return non-zero exit status if no instances are running. This is
+    # especially necessary when testing a specific instance
+    # ('instance_manager status FooDB') by provisioning tools such as
+    # Ansible or Puppet so it can tell the instance is not running.
+    if [[ ${#running_instances[@]} -eq 0 ]]; then
+      exit 1
+    else
+      exit 0
+    fi
 }
 
 
