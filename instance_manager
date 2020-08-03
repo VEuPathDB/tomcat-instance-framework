@@ -222,7 +222,7 @@ init_for_managment() {
     [[ $VERBOSE ]] && echo "source global configuration: '$global_cfg'"
     source $global_cfg
 
-    export ORACLE_HOME LD_LIBRARY_PATH
+    export ORACLE_HOME LD_LIBRARY_PATH LANG
 
     # Instance specific configuration
     cfg=${INSTANCE}/conf/instance.env
