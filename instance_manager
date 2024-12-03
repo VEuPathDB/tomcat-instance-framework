@@ -183,6 +183,9 @@ manager_path_for_version() {
     10.*)
       echo 'manager/text'
       ;;
+    11.*)
+      echo 'manager/text'
+      ;;
     *)
       echo  1>&2 "unable to determine the manager's URL path for Tomcat version '${tomcat_version}'"
       ;;
