@@ -1,7 +1,7 @@
 %define pkg_name tomcat-instance-framework
 %define instance_dir tomcat_instances
-%define required_tomcat_version 6.0.35
-%define required_java_version 1.7.0_25
+%define required_tomcat_version 9.0.96
+%define required_java_version 21
 %define required_oracle_version 11.2.0.3
 %define tomcat_uid 300
 %define packager Mark Heiges <mheiges@uga.edu>
@@ -16,12 +16,11 @@ Group: Networking/Daemons
 URL: https://www.cbil.upenn.edu/apiwiki/index.php/UGATomcatConfiguration
 Packager: %{packager}
 
-Requires: jdk >= %{required_java_version}
+Requires: java-21-openjdk >= %{required_java_version}
 Requires: tomcat-%{required_tomcat_version}
 Requires: perl-XML-Simple
 Requires(pre): %{_sbindir}/useradd
 Requires(pre): %{_sbindir}/groupadd
-
 
 Source0: tomcat-instance-framework-%{version}.tar.gz
 
