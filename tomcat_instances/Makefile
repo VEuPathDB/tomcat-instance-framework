@@ -1,5 +1,6 @@
 # Make a Tomcat project instance for EuPathDB
-# usage
+#
+# Example Usage:
 #
 #  make install                       \
 #    INSTANCE=FooDB                   \
@@ -7,8 +8,12 @@
 #    AJP13_PORT=19209                 \
 #    JMX_PORT=19205                   \
 #    TOMCAT_USER=tomcat_Z             \
+#    TEMPLATE=7.0.x                   \
+#    CATALINA_HOME=/usr/local/apache-tomcat-7.0.103 \
 #    ORCL_JDBC_PATH=$ORACLE_HOME/jdbc/lib/ojdbc6.jar \
 #    PG_JDBC_PATH=$PG_HOME/lib/java/postgresql92-jdbc.jar
+#
+# Note: You cannot update the template
 #
 #  make update                        \
 #    INSTANCE=FooDB                   \
@@ -16,13 +21,14 @@
 #    AJP13_PORT=19209                 \
 #    JMX_PORT=19205                   \
 #    TOMCAT_USER=tomcat_Z             \
+#    CATALINA_HOME=/usr/local/apache-tomcat-7.0.103 \
 #    ORCL_JDBC_PATH=$ORACLE_HOME/jdbc/lib/ojdbc6.jar \
 #    PG_JDBC_PATH=$PG_HOME/lib/java/postgresql92-jdbc.jar
 #
-# Optionally,
-#    ORCL_JDBC_PATH and PG_JDBC_PATH are optional
+# Optional values:
+#    ORCL_JDBC_PATH, PG_JDBC_PATH
 
-# Other special purppose variables
+# Other special purpose variables
 #    DEFER_USER=1  - do not do check and chown for user. Useful for RPM builds on naive servers, 
 #                    assuming the RPM install process does the chown (e.g. using %attr() ).
 
@@ -63,7 +69,7 @@ endif
 
 can_update :
 ifeq "$(wildcard $(INSTANCE) )" ""
-	@echo $(INSTANCE) does not exit
+	@echo $(INSTANCE) does not exist
 	@exit 1
 endif
 
