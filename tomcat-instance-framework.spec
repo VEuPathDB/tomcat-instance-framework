@@ -36,8 +36,7 @@ Tomcat instances for the EuPathDB BRC project.
 
 %build
 %define tc_shared_conf tomcat_instances/shared/conf/global.env
-sed -i 's;^CATALINA_HOME=.*;CATALINA_HOME=/usr/local/apache-tomcat-%{required_tomcat_version};' %{tc_shared_conf}
-sed -i 's;^JAVA_HOME=.*;JAVA_HOME=/usr/java/jdk%{required_java_version};' %{tc_shared_conf}
+sed -i 's;^CATALINA_HOME=.*;CATALINA_HOME=/usr/local/tomcat-%{required_tomcat_version};' %{tc_shared_conf}
 sed -i 's;^ORACLE_HOME=.*;ORACLE_HOME=/u01/app/oracle/product/%{required_oracle_version}/db_1;' %{tc_shared_conf}
 
 %install
