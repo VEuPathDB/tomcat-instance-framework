@@ -1,0 +1,20 @@
+<!--
+
+    Context configuration file for the Tomcat Manager Web App
+
+    $Id: manager.xml 303123 2004-08-26 17:03:35Z remm $
+
+-->
+
+
+<Context docBase="${catalina.home}/webapps/manager"
+         privileged="true" antiResourceLocking="false" >
+
+  <!-- Link to the user database we will get roles from -->
+  <ResourceLink name="users" global="UserDatabase"
+                type="org.apache.catalina.UserDatabase"/>
+
+  <Valve className="org.apache.catalina.valves.RemoteAddrValve"
+                allow="127.0.0.1"/>
+            
+</Context>

@@ -14,7 +14,7 @@ TOMCAT_INSTANCES_DIR="$(readlink -e "$TOMCAT_INSTANCES_DIR")"
 #///////////////////////////////////////////////////////////////#
 
 # clear invoker's env. Only use what is specified inline or by
-# source-ing instance.env
+# sourcing instance.env
 unset $(/usr/bin/env | \
     egrep -v 'TOMCAT_INSTANCES_DIR|USER' | \
     egrep '^(\w+)=(.*)$' | \
@@ -44,7 +44,6 @@ usage() {
     echo
     exit 1
 }
-
 
 expanded_usage() {
     local known_instances=`get_known_instances`
@@ -144,9 +143,7 @@ set_manager_credentials() {
 
     TC_USER=${cred[0]}
     TC_PASS=${cred[1]}
-
 }
-
 
 require_sudo() {
     if [[ "$TOMCAT_USER" != "$USER" && `id -u` != 0 ]]; then
@@ -154,14 +151,12 @@ require_sudo() {
     fi
 }
 
-
 # determine the version of Tomcat.
 # The version.sh script is included with Tomcat >= 5.0, don't know about earlier.
 # Basically it runs "java  -classpath $CATALINA_HOME/lib/catalina.jar org.apache.catalina.util.ServerInfo"
 tomcat_version() {
   $CATALINA_HOME/bin/version.sh | grep '^Server version:' | cut -d'/' -f2
 }
-
 
 # The url path to the Tomcat Manager varies with Tomcat version
 # /manager/<verb> for TC 6, /manager/text/<verb> for TC 7 .
@@ -180,12 +175,17 @@ manager_path_for_version() {
     9.*)
       echo 'manager/text'
       ;;
-      *)
+    10.*)
+      echo 'manager/text'
+      ;;
+    11.*)
+      echo 'manager/text'
+      ;;
+    *)
       echo  1>&2 "unable to determine the manager's URL path for Tomcat version '${tomcat_version}'"
       ;;
   esac
 }
-
 
 # initialize for management tasks (start, stop, enable, disable, list)
 init_for_managment() {
@@ -272,7 +272,6 @@ init_for_managment() {
         -Dtcif.root=$TOMCAT_INSTANCES_DIR \
     "}
 
-
     # 'eval echo' expands any embedded variables
     for val in "${CATALINA_OPTS[*]}"; do
       CATALINA_OPTS_E="${CATALINA_OPTS_E} $(eval echo $val)"
@@ -302,7 +301,6 @@ init_for_managment() {
 
 } # init_for_managment()
 
-
 # output parent and child processes
 get_pids() {
   # processes owned by $TOMCAT_USER
@@ -320,7 +318,6 @@ get_pids() {
     )
     echo $pids
 }
-
 
 start() {
     require_sudo
@@ -390,7 +387,6 @@ start() {
     return $exit_status
 }
 
-
 stop() {
     require_sudo
 
@@ -425,7 +421,6 @@ stop() {
 
     # add newline after last dot
     echo ""
-
 }
 
 disable() {
@@ -443,7 +438,6 @@ disable() {
   echo "Renaming ${INSTANCE} directory to _${INSTANCE}"
   cd "${TOMCAT_INSTANCES_DIR}"
   mv "${INSTANCE}" "_${INSTANCE}"
-
 }
 
 enable() {
@@ -486,7 +480,6 @@ deployFile() {
    cd - > /dev/null
 }
 
-
 # pass in context xml to create and deploy from temporary context.xml file
 deployVirtual() {
     local HTTP_PORT=$1
@@ -502,7 +495,6 @@ deployVirtual() {
     curl -s "$deploy_url"
     rm -f $tmp_ctx_file || { echo "could not delete temp file '$tmp_ctx_file'. Please manually remove it."; }
 }
-
 
 undeploy() {
     local webapp=$1
@@ -598,14 +590,12 @@ tstatus() {
     fi
 }
 
-
 wstatus() {
    local webapp=$1
    local tomcat_ctx=$([ "$webapp" == "ROOT" ] && echo "/" || echo "/$webapp")
    set_manager_credentials $INSTANCE
    curl -s "http://$TC_USER:$TC_PASS@127.0.0.1:$HTTP_PORT/${MANAGER_PATH}/list" | egrep "^$tomcat_ctx:" | awk -F: "{print \$2}"
 }
-
 
 start_app() {
     local webapp=$1
@@ -631,7 +621,6 @@ start_app() {
       curl -s "$start_url"
     fi
 }
-
 
 manage() {
     [ "$1" == "" ] && usage;
@@ -733,7 +722,7 @@ EOF
 }
 
 INSTANCE=$2
-# Special case when starting/stoping instance 'all'. Iteratively
+# Special case when starting/stopping instance 'all'. Iteratively
 # invoke this script for each active instance found.
 if [[
   "$INSTANCE" == "all" &&
