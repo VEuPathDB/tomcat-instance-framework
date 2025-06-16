@@ -8,8 +8,6 @@ RemainAfterExit=yes
 ExecStart=/usr/bin/instance_manager start all
 ExecReload=/usr/bin/instance_manager reload all
 ExecStop=/usr/bin/instance_manager stop all
-StandardOutput=syslog
-StandardError=syslog
 
 [Install]
 WantedBy=multi-user.target
