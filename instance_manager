@@ -536,7 +536,7 @@ tstatus() {
     tcif_filter="grep 'tcif.root=$TOMCAT_INSTANCES_DIR'"
 
     # filter on optional list of specific instances
-    if [[ ${#report_on[@] > 0} ]]; then
+    if [[ ${#report_on[@]} -gt 0 ]]; then
       gstr=`join '|' ${report_on[@]}`
       instance_filter="egrep '$gstr'"
     else
