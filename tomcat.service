@@ -1,9 +1,5 @@
 [Unit]
 Description=Tomcat Instance Framework
-After=mariadb.service
-After=mysqld.service
-After=oradb.service
-After=postgresql.service
 
 [Service]
 Type=oneshot
