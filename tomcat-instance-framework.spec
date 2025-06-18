@@ -1,8 +1,7 @@
 %define pkg_name tomcat-instance-framework
 %define instance_dir tomcat_instances
-%define required_tomcat_version 9
+%define required_tomcat_version 11
 %define required_java_version 21
-%define required_oracle_version 11.2.0.3
 %define tomcat_uid 300
 %define packager Mark Heiges <mheiges@uga.edu>
 
@@ -16,7 +15,7 @@ Group: Networking/Daemons
 URL: https://wiki.apidb.org/index.php/UGATomcatConfiguration
 Packager: %{packager}
 
-Requires: java-21-openjdk >= %{required_java_version}
+Requires: java-%{required_java_version}-openjdk
 Requires: tomcat-%{required_tomcat_version}
 Requires: perl-XML-Simple
 Requires(pre): %{_sbindir}/useradd
@@ -36,8 +35,7 @@ Tomcat instances for the EuPathDB BRC project.
 
 %build
 %define tc_shared_conf tomcat_instances/shared/conf/global.env
-sed -i 's;^CATALINA_HOME=.*;CATALINA_HOME=/usr/local/tomcat-%{required_tomcat_version};' %{tc_shared_conf}
-sed -i 's;^ORACLE_HOME=.*;ORACLE_HOME=/u01/app/oracle/product/%{required_oracle_version}/db_1;' %{tc_shared_conf}
+sed -i 's;^CATALINA_HOME=.*;CATALINA_HOME=/usr/local/apache-tomcat-%{required_tomcat_version};' %{tc_shared_conf}
 
 %install
 rm -rf $RPM_BUILD_ROOT
@@ -49,15 +47,10 @@ cp -a %{instance_dir} $RPM_BUILD_ROOT/usr/local/
 cp instance_manager $RPM_BUILD_ROOT/usr/bin/instance_manager
 cp Changelog $RPM_BUILD_ROOT/usr/share/doc/%{pkg_name}
 cp ReadMe.md $RPM_BUILD_ROOT/usr/share/doc/%{pkg_name}
-cp misc/bash_tab_completion.sh $RPM_BUILD_ROOT/etc/profile.d/tcif_completion.sh
+cp misc/bash_tab_completion.sh $RPM_BUILD_ROOT/etc/profile.d/tcif_bash_completion.sh
 
-%if 0%{?rhel} >=7
 mkdir -p $RPM_BUILD_ROOT/usr/lib/systemd/system
 cp tomcat.service $RPM_BUILD_ROOT/usr/lib/systemd/system/tomcat.service
-%else
-mkdir -p $RPM_BUILD_ROOT/etc/init.d
-cp tomcat $RPM_BUILD_ROOT/etc/init.d/tomcat
-%endif
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -74,16 +67,12 @@ exit 0
 %defattr(-, tomcat, tomcat)
 %attr(755, root, root) /usr/bin/instance_manager
 
-%if 0%{?rhel} >=7
 %attr(0644, root, root) /usr/lib/systemd/system/tomcat.service
-%else
-%attr(0754, root, root) /etc/init.d/tomcat
-%endif
 
 /usr/local/%{instance_dir}/templates
 /usr/local/%{instance_dir}/Makefile
 /usr/local/%{instance_dir}/shared/webapps
-/etc/profile.d/tcif_completion.sh
+/etc/profile.d/tcif_bash_completion.sh
 
 %dir /usr/local/%{instance_dir}
 %dir /usr/local/%{instance_dir}/shared
