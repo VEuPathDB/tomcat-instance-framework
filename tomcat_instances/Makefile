@@ -105,7 +105,7 @@ configure:
 	    -e 's;AJP13_PORT=.*;AJP13_PORT=$(AJP13_PORT);'          \
 	    -e 's;JMX_PORT=.*;JMX_PORT=$(JMX_PORT);'                \
 	    -e 's;TOMCAT_USER=.*;TOMCAT_USER=$(TOMCAT_USER);'       \
-      -e 's;CATALINA_HOME=.*;CATALINA_HOME=$(CATALINA_HOME);' \
+        -e 's;CATALINA_HOME=.*;CATALINA_HOME=$(CATALINA_HOME);' \
 	    instance.env.in > instance.env
 
 	@echo set tomcat-users.xml credentials \(not echoed to screen\) ...
@@ -114,6 +114,12 @@ configure:
 	sed -i -e 's;@MANAGERUSER@;$(MANAGER_USER);' \
 	       -e 's;@MANAGERPASSWD@;$(MANAGER_PASSWD);' \
 	    tomcat-users.xml
+
+    @echo set AJP13 settings in server.xml  \(not echoed to screen\) ...
+    @cd $(INSTANCE)/conf &&  \
+    	sed -i -e 's;@AJP13_SECRET@;$(AJP13_SECRET);' \
+    	       -e 's;@AJP13_ALLOWEDREQUESTATTRIBUTESPATTERN@;$(AJP13_ALLOWEDREQUESTATTRIBUTESPATTERN);' \
+    	    server.xml
 
 fix_perms:
 	chmod 0644 $(INSTANCE)/conf/instance.env

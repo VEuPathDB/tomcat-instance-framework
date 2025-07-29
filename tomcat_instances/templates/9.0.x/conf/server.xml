@@ -127,8 +127,8 @@
                port="${ajp13.port}"
                redirectPort="8443"
                maxParameterCount="1000"
-               secret="${ajp13.secret}"
-               allowedRequestAttributesPattern="${ajp13.allowedRequestAttributesPattern}"
+               secret="@AJP13_SECRET@"
+               allowedRequestAttributesPattern="@AJP13_ALLOWEDREQUESTATTRIBUTESPATTERN@"
                />
 
     <!-- An Engine represents the entry point (within Catalina) that processes
