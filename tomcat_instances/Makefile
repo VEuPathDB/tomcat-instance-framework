@@ -115,11 +115,11 @@ configure:
 	       -e 's;@MANAGERPASSWD@;$(MANAGER_PASSWD);' \
 	    tomcat-users.xml
 
-    @echo set AJP13 settings in server.xml  \(not echoed to screen\) ...
-    @cd $(INSTANCE)/conf &&  \
-    	sed -i -e 's;@AJP13_SECRET@;$(AJP13_SECRET);' \
-    	       -e 's;@AJP13_ALLOWEDREQUESTATTRIBUTESPATTERN@;$(AJP13_ALLOWEDREQUESTATTRIBUTESPATTERN);' \
-    	    server.xml
+	@echo set AJP13 settings in server.xml  \(not echoed to screen\) ...
+	@cd $(INSTANCE)/conf &&  \
+		sed -i -e 's;@AJP13_SECRET@;$(AJP13_SECRET);' \
+		       -e 's;@AJP13_ALLOWEDREQUESTATTRIBUTESPATTERN@;$(AJP13_ALLOWEDREQUESTATTRIBUTESPATTERN);' \
+	    server.xml
 
 fix_perms:
 	chmod 0644 $(INSTANCE)/conf/instance.env
