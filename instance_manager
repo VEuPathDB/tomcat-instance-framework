@@ -345,6 +345,7 @@ start() {
     echo starting $INSTANCE...
 
     STARTUP_EXEC="$JSVC_EXE \
+    -umask 0022
     -user $TOMCAT_USER \
     -home $JAVA_HOME \
     -Dcatalina.home=$CATALINA_HOME \
