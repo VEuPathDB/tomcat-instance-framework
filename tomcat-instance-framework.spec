@@ -9,7 +9,7 @@ Summary: EuPathDB-BRC Instance Framework for Apache Tomcat
 Name: tomcat-instance-framework
 # set version on CLI, e.g. rpmbuild --define 'pkg_version 1.2.3'
 Version: %{pkg_version}
-Release: 2.el%{?rhel}
+Release: 1.el%{?rhel}
 License: GPL
 Group: Networking/Daemons
 URL: https://wiki.apidb.org/index.php/UGATomcatConfiguration
